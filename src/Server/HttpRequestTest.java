@@ -161,4 +161,33 @@ public class HttpRequestTest {
         assertEquals("1", req.getBody());
     }
 
+    @Test
+    public void handlesBodyWithNewLine() throws IOException {
+        String rawRequest = "POST / HTTP/1.1\r\n"
+                + "Host: example.com\r\n"
+                + "User-Agent: Mozilla/5.0\r\n"
+                + "Accept: */*\r\n"
+                + "Content-Length: 17\r\n\r\n"
+                + "12345\nHellow Rodl";
+
+        InputStream is = new ByteArrayInputStream(rawRequest.getBytes());
+        HttpRequest req = HttpRequest.parse(is);
+        assertEquals("12345\nHellow Rodl", req.getBody());
+    }
+
+    @Test
+    public void throwsForTooLongContentLength() throws IOException {
+        String rawRequest = "POST / HTTP/1.1\r\n"
+                + "Host: example.com\r\n"
+                + "User-Agent: Mozilla/5.0\r\n"
+                + "Accept: */*\r\n"
+                + "Content-Length: 20\r\n\r\n"
+                + "12345\nHellow Rodl";
+
+        InputStream is = new ByteArrayInputStream(rawRequest.getBytes());
+        assertThrows(IllegalArgumentException.class, () -> {
+            HttpRequest.parse(is);
+        });
+    }
+
 }

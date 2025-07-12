@@ -44,6 +44,18 @@ public class HttpRequest {
         String requestLine = reader.readLine();
 
 
+        parseStartLine result = getResult(requestLine);
+        Methods method = Methods.confirmMethod(result.methodString());
+
+        Map<String, String> headers = parseHeaders(reader);
+
+        String contentLength = headers.get("content-length");
+        String body = parseBody(contentLength, reader, requestLine);
+
+        return new HttpRequest(method, result.pathString(), result.versionString(), headers, body);
+    }
+
+    private static parseStartLine getResult(String requestLine) {
         if (requestLine == null || requestLine.isEmpty())
             throw new IllegalArgumentException("Empty request line");
 
@@ -60,14 +72,10 @@ public class HttpRequest {
         String methodString = parts[0];
         String pathString = parts[1];
         String versionString = parts[2];
-        Methods method = Methods.confirmMethod(methodString);
+        return new parseStartLine(methodString, pathString, versionString);
+    }
 
-        Map<String, String> headers = parseHeaders(reader);
-
-        String contentLength = headers.get("content-length");
-        String body = parseBody(contentLength, reader, requestLine);
-
-        return new HttpRequest(method, pathString, versionString, headers, body);
+    private record parseStartLine(String methodString, String pathString, String versionString) {
     }
 
     private static String parseBody(String contentLength, BufferedReader reader, String requestLine) throws IOException {
