@@ -28,10 +28,12 @@ public class ServerArgs {
             if (token.equals("-x"))
                 System.out.println("Running on port: " + port + "Serving files from: " + root);
 
-            if (token.equals("my-http-server"))
+            if (token.equals("my-http-server")){
                 System.out.println(" <server name>\n" +
                         " Running on port: " + this.port + "\n" +
                         " Serving files from: " + this.root);
+                // TODO start server
+            }
         }
     }
 
