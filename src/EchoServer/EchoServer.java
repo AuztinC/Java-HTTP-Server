@@ -1,4 +1,4 @@
-package Server;
+package EchoServer;
 
 import java.io.BufferedReader;
 import java.io.IOException;

@@ -2,7 +2,8 @@ package Server;
 
 public enum Methods {
     GET,
-    PUT;
+    PUT,
+    POST;
 
 
     public static Methods confirmMethod(String input) {
