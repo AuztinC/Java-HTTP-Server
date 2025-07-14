@@ -4,11 +4,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
+import java.io.*;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 public class ServerArgsTest {
     private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -25,27 +24,34 @@ public class ServerArgsTest {
     }
 
     @Test
-    public void parsesDefaultRootDirectory() {
+    public void parsesDefaultRootDirectory() throws IOException {
         ServerArgs args = new ServerArgs(new String[]{});
         assertEquals(System.getProperty("user.dir"), args.getRoot());
     }
 
     @Test
-    public void parsesRootDirectory() {
+    public void parsesRootDirectory() throws IOException {
         ServerArgs args = new ServerArgs(new String[]{"-r", "/foo/bar"});
         assertEquals("/foo/bar", args.getRoot());
         assertEquals("Serving files from: /foo/bar",
                 outputStream.toString().trim());
     }
+    @Test
+    public void throwForRootFlagWithoutValue() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new ServerArgs(new String[]{"-r"});
+        });
+    }
+
 
     @Test
-    public void parsesDefaultValues() {
+    public void parsesDefaultValues() throws IOException {
         ServerArgs args = new ServerArgs(new String[]{});
         assertEquals(80, args.getPort());
     }
 
     @Test
-    public void parsesCustomPort() {
+    public void parsesCustomPort() throws IOException {
         ServerArgs args = new ServerArgs(new String[]{"-p", "8080"});
         assertEquals(8080, args.getPort());
         assertEquals("Running on port: 8080",
@@ -53,7 +59,14 @@ public class ServerArgsTest {
     }
 
     @Test
-    public void hPrintsHelperMessage() {
+    public void throwForPortFlagWithoutValue() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new ServerArgs(new String[]{"-p"});
+        });
+    }
+
+    @Test
+    public void hPrintsHelperMessage() throws IOException {
         new ServerArgs(new String[]{"-h"});
         assertEquals("Usage: my-http-server [options]\n" +
                         "-p     Specify the port.  Default is 80.\n" +
@@ -64,7 +77,7 @@ public class ServerArgsTest {
     }
 
     @Test
-    public void helpPrintsHelperMessage() {
+    public void helpPrintsHelperMessage() throws IOException {
         new ServerArgs(new String[]{"-help"});
         assertEquals("Usage: my-http-server [options]\n" +
                         "-p     Specify the port.  Default is 80.\n" +
@@ -75,20 +88,18 @@ public class ServerArgsTest {
     }
 
     @Test
-    public void xPrintsConfigWithoutStart() {
+    public void xPrintsConfigWithoutStart() throws IOException {
         new ServerArgs(new String[]{"-x"});
-        assertEquals("Running on port: 80" +
-                        "Serving files from: " + System.getProperty("user.dir"),
+        assertEquals("Example Server\nRunning on port: 80" +
+                        "\nServing files from: " + System.getProperty("user.dir"),
                 outputStream.toString().trim());
     }
 
+
     @Test
-    public void serverNameStarts() {
-        new ServerArgs(new String[]{"my-http-server"});
-        assertEquals("<server name>\n" +
-                " Running on port: 80\n" +
-                " Serving files from: " + System.getProperty("user.dir"), outputStream.toString().trim());
+    public void updatedServerConfigWithFlags() throws IOException {
+        new ServerArgs(new String[]{"-p", "8080", "-r", "/home"});
+        assertEquals("Running on port: 8080\n" +
+                "Serving files from: " + new File("/home").getCanonicalPath(), outputStream.toString().trim());
     }
-
-
 }

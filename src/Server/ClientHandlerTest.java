@@ -1,0 +1,24 @@
+package Server;
+
+import org.junit.Test;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
+public class ClientHandlerTest {
+
+    ClientHandler handler;
+
+    @Test
+    public void handlesHello() {
+        handler = new ClientHandler();
+        HttpRequest req = new HttpRequest(Methods.GET, "/hello", "1.1", null, null);
+        HttpResponse resp = handler.handle(req);
+        assertEquals(StatusCode.OK, resp.getStatus());
+        assertEquals("1.1", resp.getVersion());
+        //... headers, etc
+        // hint: you need header content type text/html for the browser to render it
+        assertEquals("<html><h1>Hello, World!</h1></html>",
+                new String(resp.getBody()));
+    }
+}

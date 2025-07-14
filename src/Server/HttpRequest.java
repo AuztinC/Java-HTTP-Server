@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,7 +40,7 @@ public class HttpRequest {
     }
 
     public static HttpRequest parse(InputStream is) throws IOException {
-        InputStreamReader isr = new InputStreamReader((is));
+        InputStreamReader isr = new InputStreamReader(is, StandardCharsets.ISO_8859_1);
         BufferedReader reader = new BufferedReader(isr);
         String requestLine = reader.readLine();
 
