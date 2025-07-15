@@ -36,13 +36,22 @@ public class Server {
             try (Socket client = serverSocket.accept();
                  InputStream in = client.getInputStream();
                  OutputStream out = client.getOutputStream();) {
-                HttpRequest parsedInput = HttpRequest.parse(in);
-                System.out.println(parsedInput.getMethod());
+                //HttpRequest parsedInput = HttpRequest.parse(in);
 
-                while (parsedInput.getMethod() != null) {
-                    System.out.println(parsedInput.getMethod());
+                // < SANDBOX
 
-                }
+                ClientHandler handler = new ClientHandler();
+                HttpRequest req = HttpRequest.parse(in);
+                HttpResponse resp = handler.handle(req);
+                out.write(resp.getBytes());
+
+                // />
+//                System.out.println(parsedInput.getMethod());
+//
+//                while (parsedInput.getMethod() != null) {
+//                    System.out.println(parsedInput.getMethod());
+//
+//                }
             }
         }
 

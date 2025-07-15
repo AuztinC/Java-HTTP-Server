@@ -14,7 +14,20 @@ public class HttpResponseTest {
         HttpResponse resp = new HttpResponse(StatusCode.OK, ContentType.TEXT_HTML, "<html><h1>Hello, World!</h1></html>".getBytes());
         String responseBytes = new String(resp.getBytes());
         // add content type length etc as headers here
-        assertEquals("HTTP/1.1 200 OK\r\n\r\n<html><h1>Hello, World!</h1></html>", responseBytes);
+        assertEquals("HTTP/1.1 200 OK\r\n" +
+                "Sever: my-http-server\r\n" +
+                "Content-Length: 35\r\n" +
+                "Content-Type: text/html\r\n" +
+                "\r\n" +
+                "<html><h1>Hello, World!</h1></html>", responseBytes);
+    }
+
+    @Test
+    public void buildsNotFoundResponse() {
+        HttpResponse resp = new HttpResponse(StatusCode.NOT_FOUND);
+        String responseBytes = new String(resp.getBytes());
+        assertEquals("HTTP/1.1 404 Not Found\r\n" +
+                "Sever: my-http-server\r\n", responseBytes);
     }
 
 //    @Test
