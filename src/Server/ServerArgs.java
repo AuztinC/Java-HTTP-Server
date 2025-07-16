@@ -21,27 +21,24 @@ public class ServerArgs {
                 System.exit(0);
             }
 
-            if (token.equals("-x")) {
+            if (token.equals("-x"))
                 printConfigOnly = true;
-            }
+
 
             if (token.equals("-p")) {
-                if (i + 1 >= args.length) {
+                if (i + 1 >= args.length)
                     throw new IllegalArgumentException("Expected Port After -p");
-                } else {
+                else
                     this.port = Integer.parseInt(args[++i]);
-                    System.out.println("Running on port: " + this.port);
-                }
+
             }
 
             if (token.equals("-r")) {
-                if (i + 1 >= args.length) {
+                if (i + 1 >= args.length)
                     throw new IllegalArgumentException("Expected Port After -r");
-                } else {
-                    this.root = args[++i];
-                    System.out.println("Serving files from: " + new File(root).getCanonicalPath());
+                else
+                    this.root = System.getProperty("user.dir") + "/" + args[++i];
 
-                }
             }
 
         }

@@ -43,7 +43,7 @@ public class Server {
 
                 ClientHandler handler = new ClientHandler();
                 HttpRequest req = HttpRequest.parse(in);
-                HttpResponse resp = handler.handle(req);
+                HttpResponse resp = handler.handle(req, this.root);
                 out.write(resp.getBytes());
 
             } catch (Exception e) {

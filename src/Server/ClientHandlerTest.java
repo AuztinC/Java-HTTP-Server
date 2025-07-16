@@ -2,8 +2,12 @@ package Server;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+
+import static org.junit.Assert.*;
 
 public class ClientHandlerTest {
 
@@ -13,13 +17,11 @@ public class ClientHandlerTest {
     public void handlesHello() {
         handler = new ClientHandler();
         HttpRequest req = new HttpRequest(Methods.GET, "/hello", "1.1", null, null);
-        HttpResponse resp = handler.handle(req);
+        HttpResponse resp = handler.handle(req, System.getProperty("user.dir"));
         assertEquals("200 OK", resp.getStatus());
         assertEquals("1.1", resp.getVersion());
         assertEquals("text/html", resp.getContentType());
         assertEquals(35, resp.getContentLength());
-        //... headers, etc
-        // hint: you need header content type text/html for the browser to render it
         assertEquals("<html><h1>Hello, World!</h1></html>",
                 new String(resp.getBody()));
     }
@@ -28,7 +30,7 @@ public class ClientHandlerTest {
     public void handlesNotFound() {
         handler = new ClientHandler();
         HttpRequest req = new HttpRequest(Methods.GET, "/blah", "1.1", null, null);
-        HttpResponse resp = handler.handle(req);
+        HttpResponse resp = handler.handle(req, System.getProperty("user.dir"));
         assertEquals("404 Not Found", resp.getStatus());
     }
 
@@ -36,7 +38,7 @@ public class ClientHandlerTest {
     public void servesProjectFile() {
         handler = new ClientHandler();
         HttpRequest req = new HttpRequest(Methods.GET, "/src/Main.java");
-        HttpResponse resp = handler.handle(req);
+        HttpResponse resp = handler.handle(req, System.getProperty("user.dir"));
         assertEquals("200 OK", resp.getStatus());
         assertEquals("1.1", resp.getVersion());
         assertEquals("text/plain", resp.getContentType());
@@ -46,9 +48,23 @@ public class ClientHandlerTest {
     public void listingsDisplaysFilesInDirectory() {
         handler = new ClientHandler();
         HttpRequest req = new HttpRequest(Methods.GET, "/listing");
-        HttpResponse resp = handler.handle(req);
-        assertEquals("200 OK", resp.getStatus());
+        HttpResponse resp = handler.handle(req, System.getProperty("user.dir") + "/src/testroot");
+        String responseText = new String(resp.getBytes(), StandardCharsets.UTF_8);        assertEquals("200 OK", resp.getStatus());
         assertEquals("1.1", resp.getVersion());
         assertEquals("text/html", resp.getContentType());
+        assertTrue(responseText.contains("200 OK"));
+        assertTrue(responseText.contains("Content-Type: text/html"));
+    }
+
+    @Test
+    public void listingImgDisplaysListOfImgFiles() {
+        handler = new ClientHandler();
+        HttpRequest req = new HttpRequest(Methods.GET, "/listing/img");
+        HttpResponse resp = handler.handle(req, System.getProperty("user.dir") + "/src/testroot");
+        String responseText = new String(resp.getBytes(), StandardCharsets.UTF_8);        assertEquals("200 OK", resp.getStatus());
+        assertEquals("1.1", resp.getVersion());
+        assertEquals("text/html", resp.getContentType());
+        assertTrue(responseText.contains("200 OK"));
+        assertTrue(responseText.contains("Content-Type: text/html"));
     }
 }

@@ -61,10 +61,6 @@ public class HttpResponse {
         } catch (IOException e) {
 //            respond with 500 error
         }
-//        response.toByteArray();
-
-
-
         return response.toByteArray();
     }
 
