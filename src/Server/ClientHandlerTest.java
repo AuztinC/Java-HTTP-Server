@@ -35,13 +35,20 @@ public class ClientHandlerTest {
     @Test
     public void servesProjectFile() {
         handler = new ClientHandler();
-        HttpRequest req = new HttpRequest(Methods.GET, "/Main.java");
+        HttpRequest req = new HttpRequest(Methods.GET, "/src/Main.java");
         HttpResponse resp = handler.handle(req);
         assertEquals("200 OK", resp.getStatus());
         assertEquals("1.1", resp.getVersion());
         assertEquals("text/plain", resp.getContentType());
-//        assertEquals(35, resp.getContentLength());
-//        assertEquals("<html><h1>Hello, World!</h1></html>",
-//                new String(resp.getBody()));
+    }
+
+    @Test
+    public void listingsDisplaysFilesInDirectory() {
+        handler = new ClientHandler();
+        HttpRequest req = new HttpRequest(Methods.GET, "/listing");
+        HttpResponse resp = handler.handle(req);
+        assertEquals("200 OK", resp.getStatus());
+        assertEquals("1.1", resp.getVersion());
+        assertEquals("text/html", resp.getContentType());
     }
 }

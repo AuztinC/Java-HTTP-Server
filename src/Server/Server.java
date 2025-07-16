@@ -26,7 +26,7 @@ public class Server {
         return serverSocket;
     }
 
-    public void start() throws IOException {
+    public void start() {
         running = true;
         System.out.println("Austin's Server\n" +
                 "Running on port: " + this.port + "\n" +
@@ -41,14 +41,11 @@ public class Server {
                  InputStream in = client.getInputStream();
                  OutputStream out = client.getOutputStream();) {
 
-                // < SANDBOX
-
                 ClientHandler handler = new ClientHandler();
                 HttpRequest req = HttpRequest.parse(in);
                 HttpResponse resp = handler.handle(req);
                 out.write(resp.getBytes());
 
-                // />
             } catch (Exception e) {
                 System.out.println(e.getMessage());
             }
