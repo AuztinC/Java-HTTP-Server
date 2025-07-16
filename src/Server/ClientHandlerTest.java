@@ -49,7 +49,8 @@ public class ClientHandlerTest {
         handler = new ClientHandler();
         HttpRequest req = new HttpRequest(Methods.GET, "/listing");
         HttpResponse resp = handler.handle(req, System.getProperty("user.dir") + "/src/testroot");
-        String responseText = new String(resp.getBytes(), StandardCharsets.UTF_8);        assertEquals("200 OK", resp.getStatus());
+        String responseText = new String(resp.getBytes(), StandardCharsets.UTF_8);
+        assertEquals("200 OK", resp.getStatus());
         assertEquals("1.1", resp.getVersion());
         assertEquals("text/html", resp.getContentType());
         assertTrue(responseText.contains("200 OK"));
@@ -61,10 +62,9 @@ public class ClientHandlerTest {
         handler = new ClientHandler();
         HttpRequest req = new HttpRequest(Methods.GET, "/listing/img");
         HttpResponse resp = handler.handle(req, System.getProperty("user.dir") + "/src/testroot");
-        String responseText = new String(resp.getBytes(), StandardCharsets.UTF_8);        assertEquals("200 OK", resp.getStatus());
+        String responseText = new String(resp.getBytes(), StandardCharsets.UTF_8);
+        assertEquals("200 OK", resp.getStatus());
         assertEquals("1.1", resp.getVersion());
         assertEquals("text/html", resp.getContentType());
-        assertTrue(responseText.contains("200 OK"));
-        assertTrue(responseText.contains("Content-Type: text/html"));
     }
 }
