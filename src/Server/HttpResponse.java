@@ -1,11 +1,13 @@
 package Server;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Map;
 
 public class HttpResponse {
 
     private final StatusCode statusCode;
-    private final ContentType contentType;
+    private final String contentType;
     private final Map<StatusCode, String> statuses = Map.of(
             StatusCode.OK, "200 OK",
             StatusCode.NOT_FOUND, "404 Not Found"
@@ -13,7 +15,7 @@ public class HttpResponse {
     private final byte[] body;
 
     // pass in status code, body, etc
-    public HttpResponse(StatusCode statusCode, ContentType contentType, byte[] body) {
+    public HttpResponse(StatusCode statusCode, String contentType, byte[] body) {
         this.statusCode = statusCode;
         this.contentType = contentType;
         this.body = body;
@@ -26,7 +28,7 @@ public class HttpResponse {
     }
 
     public String getStatus() {
-        System.out.print(this.statusCode);
+        //System.out.print(this.statusCode);
         return statuses.get(this.statusCode);
     }
 
@@ -39,9 +41,7 @@ public class HttpResponse {
     }
 
     public String getContentType() {
-        if (this.contentType == ContentType.TEXT_HTML)
-            return "text/html";
-        return "";
+        return this.contentType;
     }
 
     public int getContentLength() {
@@ -49,16 +49,23 @@ public class HttpResponse {
     }
 
     public byte[] getBytes() {
-        String response = "";
-        response += "HTTP/" + this.getVersion() + " " + this.getStatus() + "\r\n";
-        response += "Sever: my-http-server\r\n";
-        if (body != null) {
-            response += "Content-Length: " + this.body.length + "\r\n" +
-                    "Content-Type: " + this.getContentType() + "\r\n\r\n" +
-                    new String(this.body);
+        ByteArrayOutputStream response = new ByteArrayOutputStream();
+        try {
+            response.write(("HTTP/" + this.getVersion() + " " + this.getStatus() + "\r\n").getBytes());
+            response.write(("Server: Austin's Server\r\n").getBytes());
+            if (body != null) {
+                response.write(("Content-Length: " + this.body.length + "\r\n" +
+                        "Content-Type: " + this.getContentType() + "\r\n\r\n" ).getBytes());
+                response.write(this.body);
+            }
+        } catch (IOException e) {
+//            respond with 500 error
         }
+//        response.toByteArray();
 
-        return response.getBytes();
+
+
+        return response.toByteArray();
     }
 
 

@@ -23,6 +23,14 @@ public class HttpRequest {
         this.body = body;
     }
 
+    public HttpRequest(Methods method, String path) {
+        this.method = method;
+        this.path = path;
+        this.version = "1.1";
+        this.headers = null;
+        this.body = null;
+    }
+
     public Methods getMethod() {
         return method;
     }

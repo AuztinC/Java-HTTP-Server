@@ -28,15 +28,18 @@ public class Server {
 
     public void start() throws IOException {
         running = true;
-        System.out.println("Example Server\n" +
+        System.out.println("Austin's Server\n" +
                 "Running on port: " + this.port + "\n" +
                 "Serving files from: " + this.root);
-        System.out.flush();
+        Thread thread = new Thread(this::run);
+        thread.start();
+    }
+
+    private void run() {
         while (running) {
             try (Socket client = serverSocket.accept();
                  InputStream in = client.getInputStream();
                  OutputStream out = client.getOutputStream();) {
-                //HttpRequest parsedInput = HttpRequest.parse(in);
 
                 // < SANDBOX
 
@@ -46,12 +49,8 @@ public class Server {
                 out.write(resp.getBytes());
 
                 // />
-//                System.out.println(parsedInput.getMethod());
-//
-//                while (parsedInput.getMethod() != null) {
-//                    System.out.println(parsedInput.getMethod());
-//
-//                }
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
             }
         }
 

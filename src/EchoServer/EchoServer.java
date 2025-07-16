@@ -47,7 +47,7 @@ public class EchoServer {
             ) {
                 String inputLine;
                 while (!(inputLine = in.readLine()).isEmpty()) {
-                    System.out.println(inputLine);
+                   // System.out.println(inputLine);
                 }
                 out.print(getResponse());
                 out.flush();
