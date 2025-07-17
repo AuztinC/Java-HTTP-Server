@@ -15,15 +15,41 @@ public class ClientHandler {
 
     public HttpResponse handle(HttpRequest req, String root) {
         if (req.getMethod() == Methods.GET) {
-
-            if (req.getPath().equals("/hello")) {
-                return new HttpResponse(StatusCode.OK, "text/html", "<html><h1>Hello, World!</h1></html>".getBytes());
-            }
-
-            if (req.getPath().startsWith("/listing")) {
-                return handleDirectoryListing(req, root);
-            }
             Path requestedPath = Path.of(root, req.getPath()).normalize();
+
+
+            if (req.getPath().equals("/hello"))
+                return new HttpResponse(StatusCode.OK, "text/html", "<html><h1>Hello, World!</h1></html>".getBytes());
+
+
+            if (req.getPath().equals("/listing"))
+                return handleDirectoryListing(req, root);
+
+            if (req.getPath().equals("/listing/img")) {
+                ByteArrayOutputStream body = new ByteArrayOutputStream();
+                try (Stream<Path> paths = Files.list(Path.of(Path.of(root) + "/img"))) {
+                    body.write("<html><body><ul>".getBytes());
+                    paths.forEach(path -> {
+                        try {
+                            String name = path.getFileName().toString();
+                            boolean isDir = Files.isDirectory(path);
+                            String href = isDir ? req.getPath() + "/" + name : "/" + name;
+                            System.out.println(href);
+                            body.write(("<li><a href=\"/img" + href + "\">").getBytes());
+                            body.write(name.getBytes());
+                            body.write("</a></li>".getBytes());
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                    body.write("</ul></body></html>".getBytes());
+                    System.out.println(body);
+                    return new HttpResponse(StatusCode.OK, "text/html", body.toByteArray());
+                } catch (IOException e) {
+                    return new HttpResponse(StatusCode.NOT_FOUND);
+                }
+            }
+
 
             if (Files.isDirectory(requestedPath)) {
                 Path indexHtml = requestedPath.resolve("index.html");
@@ -99,8 +125,11 @@ public class ClientHandler {
                 paths.forEach(path -> {
                     try {
                         String name = path.getFileName().toString();
-                        String relativePath = req.getPath().replaceFirst("/listing", "");
-                        String href = relativePath.endsWith("/") ? relativePath + name : relativePath + "/" + name;
+                        boolean isDir = Files.isDirectory(path);
+
+                        String href = isDir ?
+                                req.getPath() + "/" + name :
+                                "/" + name;
                         body.write(("<li><a href=\"" + href + "\">" + name + "</a></li>").getBytes());
                     } catch (IOException e) {
 //                        throw new UncheckedIOException(e);
