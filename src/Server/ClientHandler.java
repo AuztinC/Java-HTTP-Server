@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,6 +40,32 @@ public class ClientHandler {
                             throw new RuntimeException(e);
                         }
                     });
+                    body.write("</ul></body></html>".getBytes());
+                    return new HttpResponse(StatusCode.OK, "text/html", body.toByteArray());
+                } catch (IOException e) {
+                    return new HttpResponse(StatusCode.NOT_FOUND);
+                }
+            }
+
+            if (req.getPath().contains("/form")) {
+                List<String> substr = List.of(req.getPath().substring(6).split("&"));
+                Map<String, String> queryParams = substr.stream()
+                        .map(s -> s.split("=", 2))
+                        .filter(arr -> arr.length == 2)
+                        .collect(Collectors.toMap(arr -> arr[0], arr -> arr[1]));
+
+                try {
+                    ByteArrayOutputStream body = new ByteArrayOutputStream();
+                    body.write("<html><body><h2>GET Form</h2><ul>".getBytes());
+
+                    queryParams.forEach((k, v) -> {
+                        try {
+                            body.write(("<li>" + k + ": " + v + "</li>").getBytes());
+                        } catch (IOException e) {
+//                                throw new UncheckedIOException(e);
+                        }
+                    });
+
                     body.write("</ul></body></html>".getBytes());
                     return new HttpResponse(StatusCode.OK, "text/html", body.toByteArray());
                 } catch (IOException e) {
@@ -93,16 +120,7 @@ public class ClientHandler {
             return new HttpResponse(StatusCode.NOT_FOUND);
         }
 
-        try {
-            Path path = Path.of(root, req.getPath());
-            byte[] body = Files.readAllBytes(path);
-            String mimeType = Files.probeContentType(path);
-
-            return new HttpResponse(StatusCode.OK, mimeType, body);
-
-        } catch (IOException e) {
-            return new HttpResponse(StatusCode.NOT_FOUND);
-        }
+        return new HttpResponse(StatusCode.NOT_FOUND);
     }
 
     private HttpResponse handleDirectoryListing(HttpRequest req, String root) {

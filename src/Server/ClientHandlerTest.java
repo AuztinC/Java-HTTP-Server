@@ -95,5 +95,37 @@ public class ClientHandlerTest {
         assertTrue(responseText.contains("<li><a href=\"/img/autobot.jpg\">autobot.jpg</a></li>"));
     }
 
+    @Test
+    public void formHandlesQueryParams() {
+        handler = new ClientHandler();
+        HttpRequest req = new HttpRequest(Methods.GET, "/form?foo=1&bar=2");
+        HttpResponse resp = handler.handle(req, System.getProperty("user.dir"));
+
+        String responseBody = new String(resp.getBody(), StandardCharsets.UTF_8);
+
+        assertEquals("200 OK", resp.getStatus());
+        assertEquals("text/html", resp.getContentType());
+        assertTrue(responseBody.contains("<h2>GET Form</h2>"));
+        assertTrue(responseBody.contains("<li>foo: 1</li>"));
+        assertTrue(responseBody.contains("<li>bar: 2</li>"));
+    }
+///form handles post multipart form with file upload
+    @Test
+    public void formPostMultipleUpload() {
+        handler = new ClientHandler();
+        HttpRequest req = new HttpRequest(Methods.POST, "/form?foo=1&bar=2");
+        HttpResponse resp = handler.handle(req, System.getProperty("user.dir"));
+
+        String responseBody = new String(resp.getBody(), StandardCharsets.UTF_8);
+
+        assertEquals("200 OK", resp.getStatus());
+        assertEquals("text/html", resp.getContentType());
+        assertTrue(responseBody.contains("<h2>GET Form</h2>"));
+        assertTrue(responseBody.contains("<li>foo: 1</li>"));
+        assertTrue(responseBody.contains("<li>bar: 2</li>"));
+    }
+
+
+
 
 }
