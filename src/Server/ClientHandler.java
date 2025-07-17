@@ -17,10 +17,8 @@ public class ClientHandler {
         if (req.getMethod() == Methods.GET) {
             Path requestedPath = Path.of(root, req.getPath()).normalize();
 
-
             if (req.getPath().equals("/hello"))
                 return new HttpResponse(StatusCode.OK, "text/html", "<html><h1>Hello, World!</h1></html>".getBytes());
-
 
             if (req.getPath().equals("/listing"))
                 return handleDirectoryListing(req, root);
@@ -34,7 +32,6 @@ public class ClientHandler {
                             String name = path.getFileName().toString();
                             boolean isDir = Files.isDirectory(path);
                             String href = isDir ? req.getPath() + "/" + name : "/" + name;
-                            System.out.println(href);
                             body.write(("<li><a href=\"/img" + href + "\">").getBytes());
                             body.write(name.getBytes());
                             body.write("</a></li>".getBytes());
@@ -43,24 +40,21 @@ public class ClientHandler {
                         }
                     });
                     body.write("</ul></body></html>".getBytes());
-                    System.out.println(body);
                     return new HttpResponse(StatusCode.OK, "text/html", body.toByteArray());
                 } catch (IOException e) {
                     return new HttpResponse(StatusCode.NOT_FOUND);
                 }
             }
 
-
             if (Files.isDirectory(requestedPath)) {
                 Path indexHtml = requestedPath.resolve("index.html");
                 if (Files.exists(indexHtml)) {
-                    // ✅ Serve index.html
                     try {
                         byte[] body = Files.readAllBytes(indexHtml);
                         String mimeType = Files.probeContentType(indexHtml);
                         return new HttpResponse(StatusCode.OK, mimeType, body);
                     } catch (IOException e) {
-//                        return new HttpResponse(StatusCode.INTERNAL_SERVER_ERROR);
+                        return new HttpResponse(StatusCode.INTERNAL_SERVER_ERROR);
                     }
                 } else {
                     try (Stream<Path> paths = Files.list(requestedPath)) {
@@ -70,7 +64,6 @@ public class ClientHandler {
                         paths.forEach(path -> {
                             try {
                                 String name = path.getFileName().toString();
-                                boolean isDir = Files.isDirectory(path);
                                 String href = req.getPath().endsWith("/") ?
                                         req.getPath() + name :
                                         req.getPath() + "/" + name;
@@ -94,13 +87,11 @@ public class ClientHandler {
                     String mimeType = Files.probeContentType(requestedPath);
                     return new HttpResponse(StatusCode.OK, mimeType, body);
                 } catch (IOException e) {
-//                    return new HttpResponse(StatusCode.INTERNAL_SERVER_ERROR);
+                    return new HttpResponse(StatusCode.INTERNAL_SERVER_ERROR);
                 }
             }
-
             return new HttpResponse(StatusCode.NOT_FOUND);
         }
-
 
         try {
             Path path = Path.of(root, req.getPath());

@@ -10,11 +10,11 @@ public class HttpResponse {
     private final String contentType;
     private final Map<StatusCode, String> statuses = Map.of(
             StatusCode.OK, "200 OK",
-            StatusCode.NOT_FOUND, "404 Not Found"
+            StatusCode.NOT_FOUND, "404 Not Found",
+            StatusCode.INTERNAL_SERVER_ERROR, "500 Internal Server Error"
     );
     private final byte[] body;
 
-    // pass in status code, body, etc
     public HttpResponse(StatusCode statusCode, String contentType, byte[] body) {
         this.statusCode = statusCode;
         this.contentType = contentType;
@@ -59,8 +59,7 @@ public class HttpResponse {
                 response.write(this.body);
             }
         } catch (IOException e) {
-//            respond with 500 error
-        }
+            return StatusCode.INTERNAL_SERVER_ERROR.toString().getBytes();        }
         return response.toByteArray();
     }
 
