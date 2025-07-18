@@ -7,8 +7,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.*;
 
 public class HttpRequestTest {
 
@@ -188,6 +187,32 @@ public class HttpRequestTest {
         assertThrows(IllegalArgumentException.class, () -> {
             HttpRequest.parse(is);
         });
+    }
+
+    @Test
+    public void readMultiPartPOST() throws IOException {
+        String boundary = "----MyBoundary";
+        String body =
+                "------" + boundary + "\r\n" +
+                        "Content-Disposition: form-data; name=\"file\"; filename=\"autobot.jpg\"\r\n" +
+                        "Content-Type: application/octet-stream\r\n" +
+                        "\r\n" +
+                        "FAKEIMAGECONTENT" + "\r\n" +
+                        "------" + boundary + "--\r\n";
+
+        String rawRequest =
+                "POST / HTTP/1.1\r\n" +
+                        "Host: example.com\r\n" +
+                        "User-Agent: TestClient\r\n" +
+                        "Content-Type: multipart/form-data; boundary=" + boundary + "\r\n" +
+                        "Content-Length: " + body.getBytes().length + "\r\n" +
+                        "\r\n" +
+                        body;
+
+        InputStream is = new ByteArrayInputStream(rawRequest.getBytes());
+        HttpRequest req = HttpRequest.parse(is);
+        assertTrue(req.getBody().contains("MyBoundary--"));
+        assertTrue(req.getBody().contains("Content-Type: application/octet-stream"));
     }
 
 }

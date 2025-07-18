@@ -7,6 +7,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -109,20 +111,33 @@ public class ClientHandlerTest {
         assertTrue(responseBody.contains("<li>foo: 1</li>"));
         assertTrue(responseBody.contains("<li>bar: 2</li>"));
     }
+
 ///form handles post multipart form with file upload
     @Test
-    public void formPostMultipleUpload() {
+    public void formPostMultiPartUpload() {
+        String boundary = "----MyBoundary";
+        String body =
+                "------" + boundary + "\r\n" +
+                        "Content-Disposition: form-data; name=\"file\"; filename=\"autobot.jpg\"\r\n" +
+                        "Content-Type: application/octet-stream\r\n" +
+                        "\r\n" +
+                        "FAKEIMAGECONTENT" + "\r\n" +
+                        "------" + boundary + "--\r\n";
+
         handler = new ClientHandler();
-        HttpRequest req = new HttpRequest(Methods.POST, "/form?foo=1&bar=2");
+        Map<String, String> headers = new HashMap<>();
+        headers.put("content-length", "" + body.getBytes(StandardCharsets.UTF_8).length);
+        headers.put("content-type", "multipart/form-data; charset=utf-8; boundary=" + boundary);
+        HttpRequest req = new HttpRequest(Methods.POST, "/form", "1.1", headers, body);
         HttpResponse resp = handler.handle(req, System.getProperty("user.dir"));
 
-        String responseBody = new String(resp.getBody(), StandardCharsets.UTF_8);
-
+        String fullResponse = new String(resp.getBytes(), StandardCharsets.UTF_8);
+        System.out.println(fullResponse);
         assertEquals("200 OK", resp.getStatus());
-        assertEquals("text/html", resp.getContentType());
-        assertTrue(responseBody.contains("<h2>GET Form</h2>"));
-        assertTrue(responseBody.contains("<li>foo: 1</li>"));
-        assertTrue(responseBody.contains("<li>bar: 2</li>"));
+        assertTrue(fullResponse.contains("<h2>POST Form</h2>"));
+        assertTrue(fullResponse.contains("<li>file name: autobot.jpg</li>"));
+        assertTrue(fullResponse.contains("<li>content type: application/octet-stream</li>"));
+        assertTrue(fullResponse.contains("<li>file size: 16</li>"));
     }
 
 

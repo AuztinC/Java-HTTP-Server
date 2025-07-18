@@ -3,12 +3,14 @@ package Server;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -47,7 +49,7 @@ public class ClientHandler {
                 }
             }
 
-            if (req.getPath().contains("/form")) {
+            if (req.getPath().contains("/form?")) {
                 List<String> substr = List.of(req.getPath().substring(6).split("&"));
                 Map<String, String> queryParams = substr.stream()
                         .map(s -> s.split("=", 2))
@@ -117,7 +119,76 @@ public class ClientHandler {
                     return new HttpResponse(StatusCode.INTERNAL_SERVER_ERROR);
                 }
             }
-            return new HttpResponse(StatusCode.NOT_FOUND);
+        }
+
+        if (req.getMethod() == Methods.POST) {
+            if (req.getHeader("content-type").contains("multipart/form-data")) {
+                ByteArrayOutputStream body = new ByteArrayOutputStream();
+                ByteArrayOutputStream headers = new ByteArrayOutputStream();
+                String contentType = req.getHeader("content-type");
+                String boundary = Arrays.stream(contentType.split(";"))
+                        .map(String::trim)
+                        .filter(s -> s.startsWith("boundary="))
+                        .map(s -> s.substring("boundary=".length()))
+                        .findFirst()
+                        .orElseThrow(() -> new IllegalArgumentException("No boundary in content-type"));
+                String delimiter = "--" + boundary;
+                String closingDelimiter = delimiter + "--";
+                String requestBody = req.getBody();
+                String[] parts = requestBody.split(Pattern.quote(delimiter));
+                List<String> partsList = Arrays.asList(parts);
+
+                try {
+                    body.write("<html><body><h2>POST Form</h2><ul>".getBytes());
+                    partsList.stream()
+                            .skip(1)
+                            .filter(p -> !p.equals("--"))
+                            .forEach(part -> {
+                                String[] section = part.split("\r\n\r\n", 2);
+                                if (section.length < 2)
+                                    return;
+                                String headerBlock = section[0];
+                                String[] headerLines = headerBlock.split("\r\n");
+                                String name = null;
+                                String filename = null;
+                                String type = null;
+
+                                for (String line : headerLines) {
+                                    if (line.toLowerCase().startsWith("content-disposition")) {
+                                        // Example: Content-Disposition: form-data; name="file"; filename="autobot.jpg"
+                                        String[] lineParts = line.split(";");
+                                        for (String linePart : lineParts) {
+                                            linePart = linePart.trim();
+                                            if (linePart.startsWith("name=")) {
+                                                name = linePart.substring(6, linePart.length() - 1); // remove quotes
+                                            } else if (linePart.startsWith("filename=")) {
+                                                filename = linePart.substring(10, linePart.length() - 1); // remove quotes
+                                            }
+                                        }
+                                    }
+                                    if (line.toLowerCase().startsWith("content-type")){
+                                        type = line.split(": ")[1];
+                                    }
+                                }
+                                String content = section[1].trim();
+                                content = content.split("\r\n--")[0];
+                                byte[] contentBytes = content.getBytes(StandardCharsets.ISO_8859_1);
+                                try {
+                                    System.out.println(filename);
+                                    headers.write(headerBlock.trim().getBytes());
+                                    body.write(("<li>file name: " + filename +"</li>").getBytes());
+                                    body.write(("<li>content type: " + type +"</li>").getBytes());
+                                    body.write(("<li>file size: " + contentBytes.length +"</li>").getBytes());
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            });
+                    body.write("</ul></body></html>".getBytes());
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                return new HttpResponse(StatusCode.OK, headers.toByteArray(), body.toByteArray());
+            }
         }
 
         return new HttpResponse(StatusCode.NOT_FOUND);
