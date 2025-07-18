@@ -132,12 +132,41 @@ public class ClientHandlerTest {
         HttpResponse resp = handler.handle(req, System.getProperty("user.dir"));
 
         String fullResponse = new String(resp.getBytes(), StandardCharsets.UTF_8);
-        System.out.println(fullResponse);
         assertEquals("200 OK", resp.getStatus());
         assertTrue(fullResponse.contains("<h2>POST Form</h2>"));
         assertTrue(fullResponse.contains("<li>file name: autobot.jpg</li>"));
         assertTrue(fullResponse.contains("<li>content type: application/octet-stream</li>"));
         assertTrue(fullResponse.contains("<li>file size: 16</li>"));
+    }
+
+    @Test
+    public void guessGameLandingPage() {
+        handler = new ClientHandler();
+        HttpRequest req = new HttpRequest(Methods.GET, "/guess");
+        HttpResponse resp = handler.handle(req, System.getProperty("user.dir"));
+
+        String fullResponse = new String(resp.getBytes(), StandardCharsets.UTF_8);
+        assertEquals("200 OK", resp.getStatus());
+        assertTrue(fullResponse.contains("<h1>Number Guessing Game</h1>"));
+    }
+
+    @Test
+    public void guessPOSTCompareNumber() {
+        String body = "number=10";
+
+        handler = new ClientHandler();
+        Map<String, String> headers = new HashMap<>();
+        headers.put("content-length", "" + body.getBytes(StandardCharsets.UTF_8).length);
+        headers.put("content-type", "text/plain");
+        HttpRequest req = new HttpRequest(Methods.POST, "/guess", "1.1", headers, body);
+        HttpResponse resp = handler.handle(req, System.getProperty("user.dir"));
+
+//        String fullResponse = new String(resp.getBytes(), StandardCharsets.UTF_8);
+        assertEquals("200 OK", resp.getStatus());
+//        assertTrue(fullResponse.contains("<h2>POST Form</h2>"));
+//        assertTrue(fullResponse.contains("<li>file name: autobot.jpg</li>"));
+//        assertTrue(fullResponse.contains("<li>content type: application/octet-stream</li>"));
+//        assertTrue(fullResponse.contains("<li>file size: 16</li>"));
     }
 
 

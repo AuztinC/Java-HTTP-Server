@@ -155,18 +155,17 @@ public class ClientHandler {
 
                                 for (String line : headerLines) {
                                     if (line.toLowerCase().startsWith("content-disposition")) {
-                                        // Example: Content-Disposition: form-data; name="file"; filename="autobot.jpg"
                                         String[] lineParts = line.split(";");
                                         for (String linePart : lineParts) {
                                             linePart = linePart.trim();
                                             if (linePart.startsWith("name=")) {
-                                                name = linePart.substring(6, linePart.length() - 1); // remove quotes
+                                                name = linePart.substring(6, linePart.length() - 1);
                                             } else if (linePart.startsWith("filename=")) {
-                                                filename = linePart.substring(10, linePart.length() - 1); // remove quotes
+                                                filename = linePart.substring(10, linePart.length() - 1);
                                             }
                                         }
                                     }
-                                    if (line.toLowerCase().startsWith("content-type")){
+                                    if (line.toLowerCase().startsWith("content-type")) {
                                         type = line.split(": ")[1];
                                     }
                                 }
@@ -174,11 +173,10 @@ public class ClientHandler {
                                 content = content.split("\r\n--")[0];
                                 byte[] contentBytes = content.getBytes(StandardCharsets.ISO_8859_1);
                                 try {
-                                    System.out.println(filename);
                                     headers.write(headerBlock.trim().getBytes());
-                                    body.write(("<li>file name: " + filename +"</li>").getBytes());
-                                    body.write(("<li>content type: " + type +"</li>").getBytes());
-                                    body.write(("<li>file size: " + contentBytes.length +"</li>").getBytes());
+                                    body.write(("<li>file name: " + filename + "</li>").getBytes());
+                                    body.write(("<li>content type: " + type + "</li>").getBytes());
+                                    body.write(("<li>file size: " + contentBytes.length + "</li>").getBytes());
                                 } catch (IOException e) {
                                     throw new RuntimeException(e);
                                 }
@@ -188,6 +186,48 @@ public class ClientHandler {
                     throw new RuntimeException(e);
                 }
                 return new HttpResponse(StatusCode.OK, headers.toByteArray(), body.toByteArray());
+            }
+        }
+
+        if (req.getPath().equals("/guess")) {
+            ByteArrayOutputStream body = new ByteArrayOutputStream();
+            int target = GuessTarget.target;
+            System.out.println(target);
+            if (req.getMethod() == Methods.GET) {
+                try {
+                    body.write("<html><body style=\"background-color:red; text-align:center;\"\"\"><h1>Number Guessing Game</h1>".getBytes());
+                    body.write("<form method=\"POST\" action=\"/guess\"><label for=\"number\">Input A Number!</label><br>".getBytes());
+                    body.write("<input type=\"text\" id=\"number\" name=\"number\"><br>".getBytes());
+                    body.write("<input type=\"submit\" value=\"Guess\">".getBytes());
+                    body.write(("<p>" + target + "</p>").getBytes());
+                    body.write("</body></html>".getBytes());
+                    return new HttpResponse(StatusCode.OK, "text/html", body.toByteArray());
+                } catch (IOException e) {
+                    return new HttpResponse(StatusCode.NOT_FOUND);
+                }
+            } else if (req.getMethod() == Methods.POST) {
+                String[] resp = req.getBody().split("=");
+                int guess = Integer.parseInt(resp[1]);
+                try {
+                    body.write("<html><body style=\"background-color:red; text-align:center;\"\"\"><h1>Number Guessing Game</h1>".getBytes());
+                    body.write("<form method=\"POST\" action=\"/guess\"><label for=\"number\">Input A Number!</label><br>".getBytes());
+                    body.write("<input type=\"text\" id=\"number\" name=\"number\"><br>".getBytes());
+                    body.write("<input type=\"submit\" value=\"Guess\">".getBytes());
+                    if (guess < target) {
+                        body.write("<p>Too Low!</p>".getBytes());
+                    } else if (guess > target)
+                        body.write("<p>Too High!</p>".getBytes());
+                    else {
+                        body.write("<p>You got it!!</p>".getBytes());
+                        body.write("<button><a href=\"/guess\">Play Again?</a></button>".getBytes());
+                        GuessTarget.target = GuessTarget.generateRandom();
+                    }
+                    body.write(("<p>" + target + "</p>").getBytes());
+                    body.write("</body></html>".getBytes());
+                    return new HttpResponse(StatusCode.OK, "text/html", body.toByteArray());
+                } catch (IOException e) {
+                    return new HttpResponse(StatusCode.NOT_FOUND);
+                }
             }
         }
 
