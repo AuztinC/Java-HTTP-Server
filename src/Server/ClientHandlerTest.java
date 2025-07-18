@@ -161,12 +161,9 @@ public class ClientHandlerTest {
         HttpRequest req = new HttpRequest(Methods.POST, "/guess", "1.1", headers, body);
         HttpResponse resp = handler.handle(req, System.getProperty("user.dir"));
 
-//        String fullResponse = new String(resp.getBytes(), StandardCharsets.UTF_8);
+        String fullResponse = new String(resp.getBytes(), StandardCharsets.UTF_8);
         assertEquals("200 OK", resp.getStatus());
-//        assertTrue(fullResponse.contains("<h2>POST Form</h2>"));
-//        assertTrue(fullResponse.contains("<li>file name: autobot.jpg</li>"));
-//        assertTrue(fullResponse.contains("<li>content type: application/octet-stream</li>"));
-//        assertTrue(fullResponse.contains("<li>file size: 16</li>"));
+        assertTrue(fullResponse.contains("<h1>Number Guessing Game</h1>"));
     }
 
 

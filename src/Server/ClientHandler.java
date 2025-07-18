@@ -149,7 +149,6 @@ public class ClientHandler {
                                     return;
                                 String headerBlock = section[0];
                                 String[] headerLines = headerBlock.split("\r\n");
-                                String name = null;
                                 String filename = null;
                                 String type = null;
 
@@ -158,9 +157,7 @@ public class ClientHandler {
                                         String[] lineParts = line.split(";");
                                         for (String linePart : lineParts) {
                                             linePart = linePart.trim();
-                                            if (linePart.startsWith("name=")) {
-                                                name = linePart.substring(6, linePart.length() - 1);
-                                            } else if (linePart.startsWith("filename=")) {
+                                            if (linePart.startsWith("filename=")) {
                                                 filename = linePart.substring(10, linePart.length() - 1);
                                             }
                                         }
@@ -192,12 +189,13 @@ public class ClientHandler {
         if (req.getPath().equals("/guess")) {
             ByteArrayOutputStream body = new ByteArrayOutputStream();
             int target = GuessTarget.target;
-            System.out.println(target);
+            int count = (7 - GuessTarget.count);
             if (req.getMethod() == Methods.GET) {
                 try {
-                    body.write("<html><body style=\"background-color:red; text-align:center;\"\"\"><h1>Number Guessing Game</h1>".getBytes());
+                    body.write("<html><body style=\"background-color:red; text-align:center;\"><h1>Number Guessing Game</h1>".getBytes());
+                    body.write(("<h3>You currently have " + count + " left").getBytes());
                     body.write("<form method=\"POST\" action=\"/guess\"><label for=\"number\">Input A Number!</label><br>".getBytes());
-                    body.write("<input type=\"text\" id=\"number\" name=\"number\"><br>".getBytes());
+                    body.write("<input type=\"number\" id=\"number\" name=\"number\" autofocus required step=\"1\" ><br>".getBytes());
                     body.write("<input type=\"submit\" value=\"Guess\">".getBytes());
                     body.write(("<p>" + target + "</p>").getBytes());
                     body.write("</body></html>".getBytes());
@@ -206,12 +204,14 @@ public class ClientHandler {
                     return new HttpResponse(StatusCode.NOT_FOUND);
                 }
             } else if (req.getMethod() == Methods.POST) {
+                count = (7 - ++GuessTarget.count);
                 String[] resp = req.getBody().split("=");
-                int guess = Integer.parseInt(resp[1]);
                 try {
+                    int guess = Integer.parseInt(resp[1]);
                     body.write("<html><body style=\"background-color:red; text-align:center;\"\"\"><h1>Number Guessing Game</h1>".getBytes());
+                    body.write(("<h3>You currently have " + count + " left").getBytes());
                     body.write("<form method=\"POST\" action=\"/guess\"><label for=\"number\">Input A Number!</label><br>".getBytes());
-                    body.write("<input type=\"text\" id=\"number\" name=\"number\"><br>".getBytes());
+                    body.write("<input type=\"number\" id=\"number\" name=\"number\" autofocus required step=\"1\"><br>".getBytes());
                     body.write("<input type=\"submit\" value=\"Guess\">".getBytes());
                     if (guess < target) {
                         body.write("<p>Too Low!</p>".getBytes());
@@ -219,8 +219,27 @@ public class ClientHandler {
                         body.write("<p>Too High!</p>".getBytes());
                     else {
                         body.write("<p>You got it!!</p>".getBytes());
-                        body.write("<button><a href=\"/guess\">Play Again?</a></button>".getBytes());
+                        body.write(("<a href=\"/guess\" style=\"  " +
+                                "background-color: black;\n" +
+                                "color: white;\n" +
+                                "padding: 14px 25px;\n" +
+                                "text-align: center;\n" +
+                                "text-decoration: none;\n" +
+                                "display: inline-block;\">Play Again?</a>").getBytes());
                         GuessTarget.target = GuessTarget.generateRandom();
+                        GuessTarget.count = 0;
+                    }
+                    if (count == 0) {
+                        body.write("<p>Oops! Better luck next time.</p><br>".getBytes());
+                        body.write(("<a href=\"/guess\" style=\"  " +
+                                "background-color: black;\n" +
+                                "color: white;\n" +
+                                "padding: 14px 25px;\n" +
+                                "text-align: center;\n" +
+                                "text-decoration: none;\n" +
+                                "display: inline-block;\">Play Again?</a>").getBytes());
+                        GuessTarget.target = GuessTarget.generateRandom();
+                        GuessTarget.count = 0;
                     }
                     body.write(("<p>" + target + "</p>").getBytes());
                     body.write("</body></html>".getBytes());
@@ -228,6 +247,7 @@ public class ClientHandler {
                 } catch (IOException e) {
                     return new HttpResponse(StatusCode.NOT_FOUND);
                 }
+
             }
         }
 
