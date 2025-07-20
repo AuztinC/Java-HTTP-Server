@@ -10,11 +10,13 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ClientHandler {
+    GuessTarget guessState = GuessTarget.getInstance();
 
     public HttpResponse handle(HttpRequest req, String root) {
         if (req.getMethod() == Methods.GET) {
@@ -188,10 +190,34 @@ public class ClientHandler {
 
         if (req.getPath().equals("/guess")) {
             ByteArrayOutputStream body = new ByteArrayOutputStream();
-            int target = GuessTarget.target;
-            int count = (7 - GuessTarget.count);
+            ByteArrayOutputStream header = new ByteArrayOutputStream();
+            int target = 0;
+            int count = 0;
+            String userId = null;
+            String cookieHeader = req.getHeader("cookie");
+
+            if (cookieHeader != null && cookieHeader.contains("userId=")) {
+                String[] cookies = cookieHeader.split(";");
+                for (String cookie : cookies) {
+                    cookie = cookie.trim();
+                    if (cookie.startsWith("userId=")) {
+                        userId = cookie.substring("userId=".length());
+                        break;
+                    }
+                }
+            }
+            target = guessState.getOrCreateTarget(userId);
+            count = guessState.getGuessCount(userId);
             if (req.getMethod() == Methods.GET) {
                 try {
+                    if (userId == null || userId.isEmpty()) {
+                        UUID newId = UUID.randomUUID();
+                        userId = newId.toString();
+                        header.write(("Set-Cookie: userId=" + userId + "; Path=/\r\n").getBytes());
+                        header.write("Content-Type: text/html".getBytes());
+                        target = guessState.getOrCreateTarget(userId);
+                        count = guessState.getGuessCount(userId);
+                    }
                     body.write("<html><body style=\"background-color:red; text-align:center;\"><h1>Number Guessing Game</h1>".getBytes());
                     body.write(("<h3>You currently have " + count + " left").getBytes());
                     body.write("<form method=\"POST\" action=\"/guess\"><label for=\"number\">Input A Number!</label><br>".getBytes());
@@ -199,12 +225,13 @@ public class ClientHandler {
                     body.write("<input type=\"submit\" value=\"Guess\">".getBytes());
                     body.write(("<p>" + target + "</p>").getBytes());
                     body.write("</body></html>".getBytes());
-                    return new HttpResponse(StatusCode.OK, "text/html", body.toByteArray());
+                    return new HttpResponse(StatusCode.OK, header.toByteArray(), body.toByteArray());
                 } catch (IOException e) {
                     return new HttpResponse(StatusCode.NOT_FOUND);
                 }
             } else if (req.getMethod() == Methods.POST) {
-                count = (7 - ++GuessTarget.count);
+                guessState.decrementGuessCount(userId);
+                count = guessState.getGuessCount(userId);
                 String[] resp = req.getBody().split("=");
                 try {
                     int guess = Integer.parseInt(resp[1]);
@@ -226,10 +253,9 @@ public class ClientHandler {
                                 "text-align: center;\n" +
                                 "text-decoration: none;\n" +
                                 "display: inline-block;\">Play Again?</a>").getBytes());
-                        GuessTarget.target = GuessTarget.generateRandom();
-                        GuessTarget.count = 0;
+                        guessState.resetUser(userId);
                     }
-                    if (count == 0) {
+                    if (guessState.getGuessCount(userId) == 0) {
                         body.write("<p>Oops! Better luck next time.</p><br>".getBytes());
                         body.write(("<a href=\"/guess\" style=\"  " +
                                 "background-color: black;\n" +
@@ -238,8 +264,7 @@ public class ClientHandler {
                                 "text-align: center;\n" +
                                 "text-decoration: none;\n" +
                                 "display: inline-block;\">Play Again?</a>").getBytes());
-                        GuessTarget.target = GuessTarget.generateRandom();
-                        GuessTarget.count = 0;
+                        guessState.resetUser(userId);
                     }
                     body.write(("<p>" + target + "</p>").getBytes());
                     body.write("</body></html>".getBytes());

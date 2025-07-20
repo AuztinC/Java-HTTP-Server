@@ -61,7 +61,6 @@ public class HttpResponse {
     }
 
     public byte[] getBytes() {
-//            System.out.println(Arrays.toString(this.body));
         if (headerBlock != null) {
             ByteArrayOutputStream response = new ByteArrayOutputStream();
             try {
@@ -69,7 +68,6 @@ public class HttpResponse {
                 response.write(("Server: Austin's Server\r\n").getBytes());
                 if (body != null) {
                     response.write(headerBlock);
-                    response.write("\r\n".getBytes());
                     response.write(("Content-Length: " + this.body.length + "\r\n\r\n").getBytes());
                     response.write(this.body);
                 }

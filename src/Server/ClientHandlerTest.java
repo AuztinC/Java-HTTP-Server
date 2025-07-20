@@ -140,7 +140,7 @@ public class ClientHandlerTest {
     }
 
     @Test
-    public void guessGameLandingPage() {
+    public void guessGameLandingPageWithCookie() {
         handler = new ClientHandler();
         HttpRequest req = new HttpRequest(Methods.GET, "/guess");
         HttpResponse resp = handler.handle(req, System.getProperty("user.dir"));
