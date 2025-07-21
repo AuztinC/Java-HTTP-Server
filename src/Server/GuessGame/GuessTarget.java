@@ -1,4 +1,4 @@
-package Server;
+package Server.GuessGame;
 
 import java.util.HashMap;
 import java.util.Map;

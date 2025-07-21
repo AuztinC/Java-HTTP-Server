@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 
 public class HttpResponse {
 
@@ -40,7 +41,6 @@ public class HttpResponse {
     }
 
     public String getStatus() {
-        //System.out.print(this.statusCode);
         return statuses.get(this.statusCode);
     }
 
@@ -61,29 +61,14 @@ public class HttpResponse {
     }
 
     public byte[] getBytes() {
-        if (headerBlock != null) {
-            ByteArrayOutputStream response = new ByteArrayOutputStream();
-            try {
-                response.write(("HTTP/" + this.getVersion() + " " + this.getStatus() + "\r\n").getBytes());
-                response.write(("Server: Austin's Server\r\n").getBytes());
-                if (body != null) {
-                    response.write(headerBlock);
-                    response.write(("Content-Length: " + this.body.length + "\r\n\r\n").getBytes());
-                    response.write(this.body);
-                }
-            } catch (IOException e) {
-                return StatusCode.INTERNAL_SERVER_ERROR.toString().getBytes();
-            }
-            return response.toByteArray();
-        }
 
         ByteArrayOutputStream response = new ByteArrayOutputStream();
         try {
             response.write(("HTTP/" + this.getVersion() + " " + this.getStatus() + "\r\n").getBytes());
             response.write(("Server: Austin's Server\r\n").getBytes());
             if (body != null) {
-                response.write(("Content-Length: " + this.body.length + "\r\n" +
-                        "Content-Type: " + this.getContentType() + "\r\n\r\n").getBytes());
+                response.write(Objects.requireNonNullElseGet(headerBlock, () -> ("Content-Type: " + this.getContentType() + "\r\n").getBytes()));
+                response.write(("Content-Length: " + this.body.length + "\r\n\r\n" ).getBytes());
                 response.write(this.body);
             }
         } catch (IOException e) {

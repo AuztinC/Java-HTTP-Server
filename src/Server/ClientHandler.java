@@ -1,6 +1,9 @@
 package Server;
 
 
+import Server.GuessGame.GuessHandler;
+import Server.GuessGame.GuessTarget;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -15,13 +18,14 @@ import java.util.stream.Stream;
 
 public class ClientHandler {
     GuessTarget guessState = GuessTarget.getInstance();
+    private final GuessHandler guessHandler = new GuessHandler();
 
     public HttpResponse handle(HttpRequest req, String root) {
         if (req.getMethod() == Methods.GET) {
             Path requestedPath = Path.of(root, req.getPath()).normalize();
 
             if (req.getPath().equals("/hello"))
-                return new HttpResponse(StatusCode.OK, "text/html", "<html><h1>Hello, World!</h1></html>".getBytes());
+                return handleHello();
 
             if (req.getPath().equals("/listing"))
                 return handleDirectoryListing(req, root);
@@ -183,45 +187,14 @@ public class ClientHandler {
         }
 
         if (req.getPath().equals("/guess")) {
-            ByteArrayOutputStream body = new ByteArrayOutputStream();
-            ByteArrayOutputStream header = new ByteArrayOutputStream();
-            String userId = extractUserId(req.getHeader("cookie"));
-            int target = guessState.getOrCreateTarget(userId);
-            int count = guessState.getGuessCount(userId);
-            if (req.getMethod() == Methods.GET) {
-                try {
-                    if (userId == null || userId.isEmpty()) {
-                        UUID newId = UUID.randomUUID();
-                        userId = newId.toString();
-                        header.write(("Set-Cookie: userId=" + userId + "; Path=/\r\n").getBytes());
-                        header.write("Content-Type: text/html".getBytes());
-                    }
-                    guessLandingPage(body, count);
-                    body.write(("<p>" + target + "</p>").getBytes());
-                    body.write("</body></html>".getBytes());
-                    return new HttpResponse(StatusCode.OK, header.toByteArray(), body.toByteArray());
-                } catch (IOException e) {
-                    return new HttpResponse(StatusCode.NOT_FOUND);
-                }
-            } else if (req.getMethod() == Methods.POST) {
-                guessState.decrementGuessCount(userId);
-                count = guessState.getGuessCount(userId);
-                String[] resp = req.getBody().split("=");
-                try {
-                    int guess = Integer.parseInt(resp[1]);
-                    guessLandingPage(body, count);
-                    handleGuess(guess, target, body, userId);
-                    body.write(("<p>" + target + "</p>").getBytes());
-                    body.write("</body></html>".getBytes());
-                    return new HttpResponse(StatusCode.OK, "text/html", body.toByteArray());
-                } catch (IOException e) {
-                    return new HttpResponse(StatusCode.NOT_FOUND);
-                }
-
-            }
+            return guessHandler.handle(req);
         }
 
         return new HttpResponse(StatusCode.NOT_FOUND);
+    }
+
+    private static HttpResponse handleHello() {
+        return new HttpResponse(StatusCode.OK, "text/html", "<html><h1>Hello, World!</h1></html>".getBytes());
     }
 
     private void handleGuess(int guess, int target, ByteArrayOutputStream body, String userId) throws IOException {

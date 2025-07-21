@@ -1,4 +1,4 @@
-package Server;
+package Server.GuessGame;
 
 import org.junit.Test;
 
