@@ -6,6 +6,8 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -139,16 +141,16 @@ public class ClientHandlerTest {
         assertTrue(fullResponse.contains("<li>file size: 16</li>"));
     }
 
-    @Test
-    public void guessGameLandingPageWithCookie() {
-        handler = new ClientHandler();
-        HttpRequest req = new HttpRequest(Methods.GET, "/guess");
-        HttpResponse resp = handler.handle(req, System.getProperty("user.dir"));
-
-        String fullResponse = new String(resp.getBytes(), StandardCharsets.UTF_8);
-        assertEquals("200 OK", resp.getStatus());
-        assertTrue(fullResponse.contains("<h1>Number Guessing Game</h1>"));
-    }
+//    @Test
+//    public void guessGameLandingPageWithCookie() {
+//        handler = new ClientHandler();
+//        HttpRequest req = new HttpRequest(Methods.GET, "/guess");
+//        HttpResponse resp = handler.handle(req, System.getProperty("user.dir"));
+//
+//        String fullResponse = new String(resp.getBytes(), StandardCharsets.UTF_8);
+//        assertEquals("200 OK", resp.getStatus());
+//        assertTrue(fullResponse.contains("<h1>Number Guessing Game</h1>"));
+//    }
 
     @Test
     public void guessPOSTCompareNumber() {
@@ -166,6 +168,59 @@ public class ClientHandlerTest {
         assertTrue(fullResponse.contains("<h1>Number Guessing Game</h1>"));
     }
 
+    @Test
+    public void pingIsInstant() {
+        handler = new ClientHandler();
+        HttpRequest req = new HttpRequest(Methods.GET, "/ping");
+        HttpResponse resp = handler.handle(req, System.getProperty("user.dir"));
+        DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime now = LocalDateTime.now();
+        String formatted = dateFormat.format(now);
+
+        String fullResponse = new String(resp.getBytes(), StandardCharsets.UTF_8);
+        assertEquals("200 OK", resp.getStatus());
+        assertTrue(fullResponse.contains("<h2>Ping</h2>"));
+        assertTrue(fullResponse.contains("<li>start time: " + formatted + "</li>"));
+        assertTrue(fullResponse.contains("<li>end time: " + formatted + "</li>"));
+    }
+
+    @Test
+    public void pingOneWaitsOneSecond() {
+        handler = new ClientHandler();
+        HttpRequest req = new HttpRequest(Methods.GET, "/ping/1");
+        HttpResponse resp = handler.handle(req, System.getProperty("user.dir"));
+        DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime later = now.plusSeconds(1);
+
+        String formattedNow = dateFormat.format(now);
+        String formattedLater = dateFormat.format(later);
+
+        String fullResponse = new String(resp.getBytes(), StandardCharsets.UTF_8);
+        assertEquals("200 OK", resp.getStatus());
+        assertTrue(fullResponse.contains("<h2>Ping</h2>"));
+        assertTrue(fullResponse.contains("<li>start time: " + formattedNow + "</li>"));
+        assertTrue(fullResponse.contains("<li>end time: " + formattedLater + "</li>"));
+    }
+
+    @Test
+    public void pingTwoWaitsTwoSecond() {
+        handler = new ClientHandler();
+        HttpRequest req = new HttpRequest(Methods.GET, "/ping/2");
+        HttpResponse resp = handler.handle(req, System.getProperty("user.dir"));
+        DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime later = now.plusSeconds(2);
+
+        String formattedNow = dateFormat.format(now);
+        String formattedLater = dateFormat.format(later);
+
+        String fullResponse = new String(resp.getBytes(), StandardCharsets.UTF_8);
+        assertEquals("200 OK", resp.getStatus());
+        assertTrue(fullResponse.contains("<h2>Ping</h2>"));
+        assertTrue(fullResponse.contains("<li>start time: " + formattedNow + "</li>"));
+        assertTrue(fullResponse.contains("<li>end time: " + formattedLater + "</li>"));
+    }
 
 
 

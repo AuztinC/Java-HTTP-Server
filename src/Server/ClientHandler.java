@@ -7,6 +7,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -52,8 +54,8 @@ public class ClientHandler {
             }
 
             if (req.getPath().contains("/form?")) {
-                List<String> substr = List.of(req.getPath().substring(6).split("&"));
-                Map<String, String> queryParams = substr.stream()
+                List<String> pathString = List.of(req.getPath().substring(6).split("&"));
+                Map<String, String> queryParams = pathString.stream()
                         .map(s -> s.split("=", 2))
                         .filter(arr -> arr.length == 2)
                         .collect(Collectors.toMap(arr -> arr[0], arr -> arr[1]));
@@ -75,6 +77,34 @@ public class ClientHandler {
                 } catch (IOException e) {
                     return new HttpResponse(StatusCode.NOT_FOUND);
                 }
+            }
+
+            if (req.getPath().contains("/ping")) {
+                ByteArrayOutputStream body = new ByteArrayOutputStream();
+                int waitTime = 0;
+                DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                LocalDateTime now = LocalDateTime.now();
+                if (req.getPath().contains("/ping/")) {
+                    waitTime = Integer.parseInt(req.getPath().substring(6));
+                    try {
+                        Thread.sleep(waitTime);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                LocalDateTime later = now.plusSeconds(waitTime);
+                String formattedNow = dateFormat.format(now);
+                String formattedLater = dateFormat.format(later);
+                try {
+                    body.write("<html><body><h2>Ping</h2><ul>".getBytes());
+                    body.write(("<li>start time: " + formattedNow + "</li>").getBytes());
+                    body.write(("<li>end time: " + formattedLater + "</li>").getBytes());
+                    body.write("</ul></body></html>".getBytes());
+                    return new HttpResponse(StatusCode.OK, "text/html", body.toByteArray());
+                } catch (IOException e) {
+                    return new HttpResponse(StatusCode.NOT_FOUND);
+                }
+
             }
 
             if (Files.isDirectory(requestedPath)) {
@@ -135,7 +165,6 @@ public class ClientHandler {
                         .findFirst()
                         .orElseThrow(() -> new IllegalArgumentException("No boundary in content-type"));
                 String delimiter = "--" + boundary;
-                String closingDelimiter = delimiter + "--";
                 String requestBody = req.getBody();
                 String[] parts = requestBody.split(Pattern.quote(delimiter));
                 List<String> partsList = Arrays.asList(parts);
@@ -191,23 +220,9 @@ public class ClientHandler {
         if (req.getPath().equals("/guess")) {
             ByteArrayOutputStream body = new ByteArrayOutputStream();
             ByteArrayOutputStream header = new ByteArrayOutputStream();
-            int target = 0;
-            int count = 0;
-            String userId = null;
-            String cookieHeader = req.getHeader("cookie");
-
-            if (cookieHeader != null && cookieHeader.contains("userId=")) {
-                String[] cookies = cookieHeader.split(";");
-                for (String cookie : cookies) {
-                    cookie = cookie.trim();
-                    if (cookie.startsWith("userId=")) {
-                        userId = cookie.substring("userId=".length());
-                        break;
-                    }
-                }
-            }
-            target = guessState.getOrCreateTarget(userId);
-            count = guessState.getGuessCount(userId);
+            String userId = extractUserId(req.getHeader("cookie"));
+            int target = guessState.getOrCreateTarget(userId);
+            int count = guessState.getGuessCount(userId);
             if (req.getMethod() == Methods.GET) {
                 try {
                     if (userId == null || userId.isEmpty()) {
@@ -215,14 +230,8 @@ public class ClientHandler {
                         userId = newId.toString();
                         header.write(("Set-Cookie: userId=" + userId + "; Path=/\r\n").getBytes());
                         header.write("Content-Type: text/html".getBytes());
-                        target = guessState.getOrCreateTarget(userId);
-                        count = guessState.getGuessCount(userId);
                     }
-                    body.write("<html><body style=\"background-color:red; text-align:center;\"><h1>Number Guessing Game</h1>".getBytes());
-                    body.write(("<h3>You currently have " + count + " left").getBytes());
-                    body.write("<form method=\"POST\" action=\"/guess\"><label for=\"number\">Input A Number!</label><br>".getBytes());
-                    body.write("<input type=\"number\" id=\"number\" name=\"number\" autofocus required step=\"1\" ><br>".getBytes());
-                    body.write("<input type=\"submit\" value=\"Guess\">".getBytes());
+                    guessLandingPage(body, count);
                     body.write(("<p>" + target + "</p>").getBytes());
                     body.write("</body></html>".getBytes());
                     return new HttpResponse(StatusCode.OK, header.toByteArray(), body.toByteArray());
@@ -235,37 +244,8 @@ public class ClientHandler {
                 String[] resp = req.getBody().split("=");
                 try {
                     int guess = Integer.parseInt(resp[1]);
-                    body.write("<html><body style=\"background-color:red; text-align:center;\"\"\"><h1>Number Guessing Game</h1>".getBytes());
-                    body.write(("<h3>You currently have " + count + " left").getBytes());
-                    body.write("<form method=\"POST\" action=\"/guess\"><label for=\"number\">Input A Number!</label><br>".getBytes());
-                    body.write("<input type=\"number\" id=\"number\" name=\"number\" autofocus required step=\"1\"><br>".getBytes());
-                    body.write("<input type=\"submit\" value=\"Guess\">".getBytes());
-                    if (guess < target) {
-                        body.write("<p>Too Low!</p>".getBytes());
-                    } else if (guess > target)
-                        body.write("<p>Too High!</p>".getBytes());
-                    else {
-                        body.write("<p>You got it!!</p>".getBytes());
-                        body.write(("<a href=\"/guess\" style=\"  " +
-                                "background-color: black;\n" +
-                                "color: white;\n" +
-                                "padding: 14px 25px;\n" +
-                                "text-align: center;\n" +
-                                "text-decoration: none;\n" +
-                                "display: inline-block;\">Play Again?</a>").getBytes());
-                        guessState.resetUser(userId);
-                    }
-                    if (guessState.getGuessCount(userId) == 0) {
-                        body.write("<p>Oops! Better luck next time.</p><br>".getBytes());
-                        body.write(("<a href=\"/guess\" style=\"  " +
-                                "background-color: black;\n" +
-                                "color: white;\n" +
-                                "padding: 14px 25px;\n" +
-                                "text-align: center;\n" +
-                                "text-decoration: none;\n" +
-                                "display: inline-block;\">Play Again?</a>").getBytes());
-                        guessState.resetUser(userId);
-                    }
+                    guessLandingPage(body, count);
+                    handleGuess(guess, target, body, userId);
                     body.write(("<p>" + target + "</p>").getBytes());
                     body.write("</body></html>".getBytes());
                     return new HttpResponse(StatusCode.OK, "text/html", body.toByteArray());
@@ -277,6 +257,53 @@ public class ClientHandler {
         }
 
         return new HttpResponse(StatusCode.NOT_FOUND);
+    }
+
+    private void handleGuess(int guess, int target, ByteArrayOutputStream body, String userId) throws IOException {
+        if (guess < target) {
+            body.write("<p>Too Low!</p>".getBytes());
+        } else if (guess > target)
+            body.write("<p>Too High!</p>".getBytes());
+        else {
+            body.write("<p>You got it!!</p>".getBytes());
+            playAgainButton(body);
+            guessState.resetUser(userId);
+        }
+        if (guessState.getGuessCount(userId) == 0) {
+            body.write("<p>Oops! Better luck next time.</p><br>".getBytes());
+            playAgainButton(body);
+            guessState.resetUser(userId);
+        }
+    }
+
+    private String extractUserId(String cookieHeader) {
+        if (cookieHeader == null) return null;
+        String[] cookies = cookieHeader.split(";");
+        for (String cookie : cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith("userId=")) {
+                return cookie.substring("userId=".length());
+            }
+        }
+        return null;
+    }
+
+    private static void guessLandingPage(ByteArrayOutputStream body, int count) throws IOException {
+        body.write("<html><body style=\"background-color:red; text-align:center;\"><h1>Number Guessing Game</h1>".getBytes());
+        body.write(("<h3>You currently have " + count + " left").getBytes());
+        body.write("<form method=\"POST\" action=\"/guess\"><label for=\"number\">Input A Number!</label><br>".getBytes());
+        body.write("<input type=\"number\" id=\"number\" name=\"number\" autofocus required step=\"1\"><br>".getBytes());
+        body.write("<input type=\"submit\" value=\"Guess\">".getBytes());
+    }
+
+    private static void playAgainButton(ByteArrayOutputStream body) throws IOException {
+        body.write(("<a href=\"/guess\" style=\"  " +
+                "background-color: black;\n" +
+                "color: white;\n" +
+                "padding: 14px 25px;\n" +
+                "text-align: center;\n" +
+                "text-decoration: none;\n" +
+                "display: inline-block;\">Play Again?</a>").getBytes());
     }
 
     private HttpResponse handleDirectoryListing(HttpRequest req, String root) {
