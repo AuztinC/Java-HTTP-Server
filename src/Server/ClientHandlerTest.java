@@ -114,7 +114,6 @@ public class ClientHandlerTest {
         assertTrue(responseBody.contains("<li>bar: 2</li>"));
     }
 
-///form handles post multipart form with file upload
     @Test
     public void formPostMultiPartUpload() {
         String boundary = "----MyBoundary";
@@ -141,19 +140,25 @@ public class ClientHandlerTest {
         assertTrue(fullResponse.contains("<li>file size: 16</li>"));
     }
 
-//    @Test
-//    public void guessGameLandingPageWithCookie() {
-//        handler = new ClientHandler();
-//        HttpRequest req = new HttpRequest(Methods.GET, "/guess");
-//        HttpResponse resp = handler.handle(req, System.getProperty("user.dir"));
-//
-//        String fullResponse = new String(resp.getBytes(), StandardCharsets.UTF_8);
-//        assertEquals("200 OK", resp.getStatus());
-//        assertTrue(fullResponse.contains("<h1>Number Guessing Game</h1>"));
-//    }
+    @Test
+    public void guessGameLandingPageWithCookie() {
+        handler = new ClientHandler();
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put("cookie", "userId=test-user");
+
+        HttpRequest req = new HttpRequest(Methods.GET, "/guess", "1.1", headers, null);
+        HttpResponse resp = handler.handle(req, System.getProperty("user.dir"));
+
+        String fullResponse = new String(resp.getBytes(), StandardCharsets.UTF_8);
+        assertEquals("200 OK", resp.getStatus());
+        assertTrue(fullResponse.contains("<h1>Number Guessing Game</h1>"));
+        assertTrue(fullResponse.contains("Input A Number!"));
+        assertTrue(fullResponse.contains("You currently have"));
+    }
 
     @Test
-    public void guessPOSTCompareNumber() {
+    public void guessPOSTReturnPage() {
         String body = "number=10";
 
         handler = new ClientHandler();
@@ -166,6 +171,94 @@ public class ClientHandlerTest {
         String fullResponse = new String(resp.getBytes(), StandardCharsets.UTF_8);
         assertEquals("200 OK", resp.getStatus());
         assertTrue(fullResponse.contains("<h1>Number Guessing Game</h1>"));
+    }
+
+    @Test
+    public void guessPOSTTooLow() {
+        handler = new ClientHandler();
+        String userId = "test-user";
+
+        GuessTarget guessState = GuessTarget.getInstance();
+        guessState.setTarget(userId, 50, 7);
+
+        String body = "number=10";
+        Map<String, String> headers = new HashMap<>();
+        headers.put("content-length", String.valueOf(body.length()));
+        headers.put("content-type", "application/x-www-form-urlencoded");
+        headers.put("cookie", "userId=" + userId);
+
+        HttpRequest req = new HttpRequest(Methods.POST, "/guess", "1.1", headers, body);
+        HttpResponse resp = handler.handle(req, System.getProperty("user.dir"));
+        String fullResponse = new String(resp.getBytes(), StandardCharsets.UTF_8);
+
+        assertEquals("200 OK", resp.getStatus());
+        assertTrue(fullResponse.contains("Too Low!"));
+    }
+
+    @Test
+    public void guessPOSTTooHigh() {
+        handler = new ClientHandler();
+        String userId = "test-user";
+
+        GuessTarget guessState = GuessTarget.getInstance();
+        guessState.setTarget(userId, 50, 1);
+
+        String body = "number=90";
+        Map<String, String> headers = new HashMap<>();
+        headers.put("content-length", String.valueOf(body.length()));
+        headers.put("content-type", "application/x-www-form-urlencoded");
+        headers.put("cookie", "userId=" + userId);
+
+        HttpRequest req = new HttpRequest(Methods.POST, "/guess", "1.1", headers, body);
+        HttpResponse resp = handler.handle(req, System.getProperty("user.dir"));
+        String fullResponse = new String(resp.getBytes(), StandardCharsets.UTF_8);
+
+        assertEquals("200 OK", resp.getStatus());
+        assertTrue(fullResponse.contains("Oops! Better luck next time."));
+    }
+
+    @Test
+    public void guessPOSTCorrectAnswer() {
+        handler = new ClientHandler();
+        String userId = "test-user";
+
+        GuessTarget guessState = GuessTarget.getInstance();
+        guessState.setTarget(userId, 50, 1);
+
+        String body = "number=50";
+        Map<String, String> headers = new HashMap<>();
+        headers.put("content-length", String.valueOf(body.length()));
+        headers.put("content-type", "application/x-www-form-urlencoded");
+        headers.put("cookie", "userId=" + userId);
+
+        HttpRequest req = new HttpRequest(Methods.POST, "/guess", "1.1", headers, body);
+        HttpResponse resp = handler.handle(req, System.getProperty("user.dir"));
+        String fullResponse = new String(resp.getBytes(), StandardCharsets.UTF_8);
+
+        assertEquals("200 OK", resp.getStatus());
+        assertTrue(fullResponse.contains("You got it!"));
+    }
+
+    @Test
+    public void guessPOSTOutOfGuesses() {
+        handler = new ClientHandler();
+        String userId = "test-user";
+
+        GuessTarget guessState = GuessTarget.getInstance();
+        guessState.setTarget(userId, 50, 7);
+
+        String body = "number=90";
+        Map<String, String> headers = new HashMap<>();
+        headers.put("content-length", String.valueOf(body.length()));
+        headers.put("content-type", "application/x-www-form-urlencoded");
+        headers.put("cookie", "userId=" + userId);
+
+        HttpRequest req = new HttpRequest(Methods.POST, "/guess", "1.1", headers, body);
+        HttpResponse resp = handler.handle(req, System.getProperty("user.dir"));
+        String fullResponse = new String(resp.getBytes(), StandardCharsets.UTF_8);
+
+        assertEquals("200 OK", resp.getStatus());
+        assertTrue(fullResponse.contains("Too High!"));
     }
 
     @Test

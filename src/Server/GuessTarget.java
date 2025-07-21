@@ -36,5 +36,10 @@ public class GuessTarget {
         userTargets.remove(userId);
         userGuesses.remove(userId);
     }
+    public void setTarget(String userId, int target, int guessCount) {
+        userTargets.put(userId, target);
+        userGuesses.put(userId, guessCount);
+    }
+
 }
 

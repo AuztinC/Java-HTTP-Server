@@ -9,10 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -49,7 +46,7 @@ public class ClientHandler {
                     body.write("</ul></body></html>".getBytes());
                     return new HttpResponse(StatusCode.OK, "text/html", body.toByteArray());
                 } catch (IOException e) {
-                    return new HttpResponse(StatusCode.NOT_FOUND);
+                    return new HttpResponse(StatusCode.INTERNAL_SERVER_ERROR);
                 }
             }
 
@@ -75,7 +72,7 @@ public class ClientHandler {
                     body.write("</ul></body></html>".getBytes());
                     return new HttpResponse(StatusCode.OK, "text/html", body.toByteArray());
                 } catch (IOException e) {
-                    return new HttpResponse(StatusCode.NOT_FOUND);
+                    return new HttpResponse(StatusCode.INTERNAL_SERVER_ERROR);
                 }
             }
 
@@ -89,7 +86,7 @@ public class ClientHandler {
                     try {
                         Thread.sleep(waitTime);
                     } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
+                        return new HttpResponse(StatusCode.INTERNAL_SERVER_ERROR);
                     }
                 }
                 LocalDateTime later = now.plusSeconds(waitTime);
@@ -102,7 +99,7 @@ public class ClientHandler {
                     body.write("</ul></body></html>".getBytes());
                     return new HttpResponse(StatusCode.OK, "text/html", body.toByteArray());
                 } catch (IOException e) {
-                    return new HttpResponse(StatusCode.NOT_FOUND);
+                    return new HttpResponse(StatusCode.INTERNAL_SERVER_ERROR);
                 }
 
             }
@@ -137,7 +134,7 @@ public class ClientHandler {
                         body.write("</ul></body></html>".getBytes());
                         return new HttpResponse(StatusCode.OK, "text/html", body.toByteArray());
                     } catch (IOException e) {
-                        return new HttpResponse(StatusCode.NOT_FOUND);
+                        return new HttpResponse(StatusCode.INTERNAL_SERVER_ERROR);
                     }
                 }
             }
@@ -154,9 +151,8 @@ public class ClientHandler {
         }
 
         if (req.getMethod() == Methods.POST) {
+
             if (req.getHeader("content-type").contains("multipart/form-data")) {
-                ByteArrayOutputStream body = new ByteArrayOutputStream();
-                ByteArrayOutputStream headers = new ByteArrayOutputStream();
                 String contentType = req.getHeader("content-type");
                 String boundary = Arrays.stream(contentType.split(";"))
                         .map(String::trim)
@@ -164,57 +160,27 @@ public class ClientHandler {
                         .map(s -> s.substring("boundary=".length()))
                         .findFirst()
                         .orElseThrow(() -> new IllegalArgumentException("No boundary in content-type"));
-                String delimiter = "--" + boundary;
-                String requestBody = req.getBody();
-                String[] parts = requestBody.split(Pattern.quote(delimiter));
-                List<String> partsList = Arrays.asList(parts);
+
+                List<Multipart> parts = parseMultipart(req.getBody(), boundary);
+
+                ByteArrayOutputStream body = new ByteArrayOutputStream();
+                ByteArrayOutputStream headers = new ByteArrayOutputStream();
 
                 try {
                     body.write("<html><body><h2>POST Form</h2><ul>".getBytes());
-                    partsList.stream()
-                            .skip(1)
-                            .filter(p -> !p.equals("--"))
-                            .forEach(part -> {
-                                String[] section = part.split("\r\n\r\n", 2);
-                                if (section.length < 2)
-                                    return;
-                                String headerBlock = section[0];
-                                String[] headerLines = headerBlock.split("\r\n");
-                                String filename = null;
-                                String type = null;
-
-                                for (String line : headerLines) {
-                                    if (line.toLowerCase().startsWith("content-disposition")) {
-                                        String[] lineParts = line.split(";");
-                                        for (String linePart : lineParts) {
-                                            linePart = linePart.trim();
-                                            if (linePart.startsWith("filename=")) {
-                                                filename = linePart.substring(10, linePart.length() - 1);
-                                            }
-                                        }
-                                    }
-                                    if (line.toLowerCase().startsWith("content-type")) {
-                                        type = line.split(": ")[1];
-                                    }
-                                }
-                                String content = section[1].trim();
-                                content = content.split("\r\n--")[0];
-                                byte[] contentBytes = content.getBytes(StandardCharsets.ISO_8859_1);
-                                try {
-                                    headers.write(headerBlock.trim().getBytes());
-                                    body.write(("<li>file name: " + filename + "</li>").getBytes());
-                                    body.write(("<li>content type: " + type + "</li>").getBytes());
-                                    body.write(("<li>file size: " + contentBytes.length + "</li>").getBytes());
-                                } catch (IOException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            });
+                    for (Multipart part : parts) {
+                        body.write(("<li>file name: " + part.getFilename() + "</li>").getBytes());
+                        body.write(("<li>content type: " + part.getContentType() + "</li>").getBytes());
+                        body.write(("<li>file size: " + part.getContent().length + "</li>").getBytes());
+                    }
                     body.write("</ul></body></html>".getBytes());
-                } catch (Exception e) {
+                } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
+
                 return new HttpResponse(StatusCode.OK, headers.toByteArray(), body.toByteArray());
             }
+
         }
 
         if (req.getPath().equals("/guess")) {
@@ -305,6 +271,45 @@ public class ClientHandler {
                 "text-decoration: none;\n" +
                 "display: inline-block;\">Play Again?</a>").getBytes());
     }
+
+    public static List<Multipart> parseMultipart(String body, String boundary) {
+        String delimiter = "--" + boundary;
+        String[] parts = body.split(Pattern.quote(delimiter));
+        List<Multipart> parsedParts = new ArrayList<>();
+
+        for (String part : parts) {
+            if (part.trim().isEmpty() || part.equals("--")) continue;
+
+            String[] section = part.split("\r\n\r\n", 2);
+            if (section.length < 2) continue;
+
+            String headerBlock = section[0];
+            String[] headerLines = headerBlock.split("\r\n");
+
+            String filename = null;
+            String type = null;
+
+            for (String line : headerLines) {
+                if (line.toLowerCase().startsWith("content-disposition")) {
+                    for (String linePart : line.split(";")) {
+                        linePart = linePart.trim();
+                        if (linePart.startsWith("filename=")) {
+                            filename = linePart.substring(10, linePart.length() - 1);
+                        }
+                    }
+                } else if (line.toLowerCase().startsWith("content-type")) {
+                    type = line.split(": ")[1].trim();
+                }
+            }
+
+            String content = section[1].trim().split("\r\n--")[0];
+            byte[] contentBytes = content.getBytes(StandardCharsets.ISO_8859_1);
+            parsedParts.add(new Multipart(filename, type, contentBytes));
+        }
+
+        return parsedParts;
+    }
+
 
     private HttpResponse handleDirectoryListing(HttpRequest req, String root) {
         Path targetDir = Path.of(root, req.getPath().replaceFirst("/listing", "")).normalize();
