@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -169,9 +168,9 @@ public class ClientHandler {
                 try {
                     body.write("<html><body><h2>POST Form</h2><ul>".getBytes());
                     for (Multipart part : parts) {
-                        body.write(("<li>file name: " + part.getFilename() + "</li>").getBytes());
-                        body.write(("<li>content type: " + part.getContentType() + "</li>").getBytes());
-                        body.write(("<li>file size: " + part.getContent().length + "</li>").getBytes());
+                        body.write(("<li>file name: " + part.filename() + "</li>").getBytes());
+                        body.write(("<li>content type: " + part.contentType() + "</li>").getBytes());
+                        body.write(("<li>file size: " + part.content().length + "</li>").getBytes());
                     }
                     body.write("</ul></body></html>".getBytes());
                 } catch (IOException e) {

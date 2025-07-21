@@ -13,7 +13,6 @@ public class HttpResponseTest {
     public void buildsOkResponseWithBody() {
         HttpResponse resp = new HttpResponse(StatusCode.OK, "text/html", "<html><h1>Hello, World!</h1></html>".getBytes());
         String responseBytes = new String(resp.getBytes());
-        // add content type length etc as headers here
         assertEquals("HTTP/1.1 200 OK\r\n" +
                 "Server: Austin's Server\r\n" +
                 "Content-Length: 35\r\n" +
