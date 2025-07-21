@@ -15,8 +15,8 @@ public class HttpResponseTest {
         String responseBytes = new String(resp.getBytes());
         assertEquals("HTTP/1.1 200 OK\r\n" +
                 "Server: Austin's Server\r\n" +
-                "Content-Length: 35\r\n" +
                 "Content-Type: text/html\r\n" +
+                "Content-Length: 35\r\n" +
                 "\r\n" +
                 "<html><h1>Hello, World!</h1></html>", responseBytes);
     }
