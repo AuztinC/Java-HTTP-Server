@@ -41,11 +41,14 @@ public class Server {
                 Socket client = serverSocket.accept();
                 Thread t = new Thread(()-> handleClient(client));
                 t.start();
+            } catch (SocketException e) {
+                if (serverSocket.isClosed()) {
+                    break;
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
-
     }
 
     private void handleClient(Socket client) {
@@ -53,9 +56,9 @@ public class Server {
                 InputStream in = client.getInputStream();
                 OutputStream out = client.getOutputStream();) {
 
-            ClientHandler handler = new ClientHandler();
+            ClientHandler handler = new ClientHandler(this.root);
             HttpRequest req = HttpRequest.parse(in);
-            HttpResponse resp = handler.handle(req, this.root);
+            HttpResponse resp = handler.handle(req);
             out.write(resp.getBytes());
 
         } catch (Exception e) {

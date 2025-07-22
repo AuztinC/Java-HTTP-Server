@@ -7,7 +7,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class FormHandler {
+public class FormHandler implements RouteHandler{
 
     public HttpResponse handle(HttpRequest req) {
         if (req.getMethod() == Methods.GET && req.getPath().contains("?")) {

@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import java.io.*;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.SocketException;
 
 import static org.junit.Assert.assertEquals;
@@ -47,5 +48,23 @@ public class ServerTest {
         assertEquals(8080, socket.getLocalPort());
         server.getServerSocket().close();
     }
+
+    @Test
+    public void startsServerLoopThreadAndStops() throws IOException, InterruptedException {
+        args = new ServerArgs(new String[]{"-p", "8081"});
+        server = new Server(args);
+
+        server.start();
+
+        Thread.sleep(100);
+
+        try (Socket socket = new Socket("localhost", server.getPort())) {
+            assertTrue(socket.isConnected());
+        }
+
+        server.stop();
+    }
+
+
 
 }

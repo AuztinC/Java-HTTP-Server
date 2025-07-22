@@ -3,42 +3,47 @@ package Server;
 
 import Server.GuessGame.GuessHandler;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+
 public class ClientHandler {
-    private final GuessHandler guessHandler = new GuessHandler();
-    private final FormHandler formHandler = new FormHandler();
-    private final PingHandler pingHandler = new PingHandler();
-    private final DirectoryListingHandler directoryListingHandler = new DirectoryListingHandler();
-    private final StaticFileHandler staticFileHandler = new StaticFileHandler();
+    private final Map<String, RouteHandler> routes;
+    String root;
 
-    public HttpResponse handle(HttpRequest req, String root) {
+    private final StaticFileHandler staticFileHandler;
 
-        if (req.getPath().equals("/hello"))
-            return handleHello();
+    public ClientHandler(String root) {
+        this.root = root;
+        routes = new HashMap<>();
 
-        if (req.getPath().startsWith("/form"))
-            return formHandler.handle(req);
+        staticFileHandler = new StaticFileHandler();
 
-        if (req.getPath().equals("/guess"))
-            return guessHandler.handle(req);
+        routes.put("/hello", new HelloHandler());
+        routes.put("/guess", new GuessHandler());
+        routes.put("/form\\?*.*", new FormHandler());
+        routes.put("/ping", new PingHandler(new ThreadSleep()));
+        routes.put("/ping/[0-9]+", new PingHandler(new ThreadSleep()));
+        routes.put("/listing.*", new DirectoryListingHandler(root));
+    }
 
-        if (req.getPath().startsWith("/ping"))
-            return pingHandler.handle(req);
+    public HttpResponse handle(HttpRequest req) {
+        String path = req.getPath();
 
-        if (req.getPath().equals("/listing"))
-            return directoryListingHandler.handleDirectoryListing(req, root);
+        if (routes.containsKey(path)) {
+            return routes.get(path).handle(req);
+        }
 
-        if (req.getPath().equals("/listing/img"))
-            return directoryListingHandler.handleDirectoryListingForImg(req, root);
-
+        for (String key : routes.keySet()) {
+            if (path.matches(key)){
+                return routes.get(key).handle(req);
+            }
+        }
 
         if (req.getMethod() == Methods.GET)
             return staticFileHandler.handle(req, root);
 
         return new HttpResponse(StatusCode.NOT_FOUND);
-    }
-
-    private static HttpResponse handleHello() {
-        return new HttpResponse(StatusCode.OK, "text/html", "<html><h1>Hello, World!</h1></html>".getBytes());
     }
 
 }
