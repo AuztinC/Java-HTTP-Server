@@ -2,20 +2,21 @@ package Server;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
+
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
 public class StaticFileHandler {
+    UserFileSystem userFileSystem = new UserFileSystem();
 
     public HttpResponse handle(HttpRequest req, String root) {
         Path requestedPath = Path.of(root, req.getPath()).normalize();
 
-        if (Files.isDirectory(requestedPath)) {
+        if (userFileSystem.isDirectory(requestedPath)) {
             return serveDirectory(requestedPath, req.getPath());
         }
 
-        if (Files.exists(requestedPath) && !Files.isDirectory(requestedPath)) {
+        if (userFileSystem.exists(requestedPath) && !userFileSystem.isDirectory(requestedPath)) {
             return serveFile(requestedPath);
         }
 
@@ -24,11 +25,11 @@ public class StaticFileHandler {
 
     private HttpResponse serveDirectory(Path dir, String requestPath) {
         Path indexHtml = dir.resolve("index.html");
-        if (Files.exists(indexHtml)) {
+        if (userFileSystem.exists(indexHtml)) {
             return serveFile(indexHtml);
         }
 
-        try (Stream<Path> paths = Files.list(dir)) {
+        try (Stream<Path> paths = userFileSystem.list(dir)) {
             ByteArrayOutputStream body = new ByteArrayOutputStream();
             body.write("<html><body><ul>".getBytes());
 
@@ -51,13 +52,28 @@ public class StaticFileHandler {
     }
 
     private HttpResponse serveFile(Path filePath) {
-        try {
-            byte[] body = Files.readAllBytes(filePath);
-            String mimeType = Files.probeContentType(filePath);
-            return new HttpResponse(StatusCode.OK, mimeType, body);
-        } catch (IOException e) {
-            return new HttpResponse(StatusCode.INTERNAL_SERVER_ERROR);
-        }
+        byte[] body = userFileSystem.readAllBytes(filePath);
+        String mimeType = userFileSystem.probeContentType(filePath);
+        return new HttpResponse(StatusCode.OK, mimeType, body);
     }
+
+//    interface FileSystem {
+//        File readBytes();
+//        String mimeType();
+//
+//    }
+//
+//    class DummyFileSystem implements FileSystem {
+//
+//        @Override
+//        public File readBytes() {
+//            return null;
+//        }
+//
+//        @Override
+//        public String mimeType() {
+//            return "";
+//        }
+//    }
 }
 
