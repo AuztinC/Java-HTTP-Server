@@ -1,5 +1,8 @@
-package Server;
+package Server.Routes;
 
+import Server.HTTP.HttpRequest;
+import Server.Methods;
+import Server.Sleep;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

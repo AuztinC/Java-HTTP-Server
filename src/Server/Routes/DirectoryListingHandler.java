@@ -1,4 +1,8 @@
-package Server;
+package Server.Routes;
+
+import Server.HTTP.HttpRequest;
+import Server.HTTP.HttpResponse;
+import Server.StatusCode;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -6,7 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
-public class DirectoryListingHandler implements RouteHandler{
+public class DirectoryListingHandler implements RouteHandler {
     String root;
 
     public DirectoryListingHandler(String root){

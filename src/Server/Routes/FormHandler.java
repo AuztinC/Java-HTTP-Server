@@ -1,4 +1,9 @@
-package Server;
+package Server.Routes;
+
+import Server.HTTP.HttpRequest;
+import Server.HTTP.HttpResponse;
+import Server.Methods;
+import Server.StatusCode;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -7,7 +12,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class FormHandler implements RouteHandler{
+public class FormHandler implements RouteHandler {
 
     public HttpResponse handle(HttpRequest req) {
         if (req.getMethod() == Methods.GET && req.getPath().contains("?")) {

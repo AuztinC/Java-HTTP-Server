@@ -2,10 +2,12 @@ package Server;
 
 
 import Server.GuessGame.GuessHandler;
+import Server.HTTP.HttpRequest;
+import Server.HTTP.HttpResponse;
+import Server.Routes.*;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 public class ClientHandler {
     private final Map<String, RouteHandler> routes;

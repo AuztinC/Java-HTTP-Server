@@ -1,11 +1,16 @@
-package Server;
+package Server.Routes;
+
+import Server.HTTP.HttpRequest;
+import Server.HTTP.HttpResponse;
+import Server.Sleep;
+import Server.StatusCode;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-public class PingHandler implements RouteHandler{
+public class PingHandler implements RouteHandler {
     Sleep sleeper;
 
     public PingHandler(Sleep sleep){

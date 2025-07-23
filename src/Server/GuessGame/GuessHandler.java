@@ -1,12 +1,15 @@
 package Server.GuessGame;
 
 import Server.*;
+import Server.HTTP.HttpRequest;
+import Server.HTTP.HttpResponse;
+import Server.Routes.RouteHandler;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.UUID;
 
-public class GuessHandler implements RouteHandler{
+public class GuessHandler implements RouteHandler {
     private final GuessTarget guessState = GuessTarget.getInstance();
 
     public HttpResponse handle(HttpRequest req) {

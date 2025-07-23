@@ -1,4 +1,6 @@
-package Server;
+package Server.HTTP;
+
+import Server.Methods;
 
 import java.io.BufferedReader;
 import java.io.IOException;

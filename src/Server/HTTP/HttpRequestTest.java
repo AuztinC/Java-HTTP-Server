@@ -1,6 +1,7 @@
-package Server;
+package Server.HTTP;
 
-import org.junit.Ignore;
+import Server.Methods;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -31,7 +32,7 @@ public class HttpRequestTest {
     public void acceptsPathWithSubdirectories() throws IOException {
         InputStream is = new ByteArrayInputStream("GET /guess/game HTTP/1.1\r\n\r\n".getBytes());
         HttpRequest req = HttpRequest.parse(is);
-        assertEquals(Methods.GET, req.getMethod());
+        Assert.assertEquals(Methods.GET, req.getMethod());
     }
 
     @Test

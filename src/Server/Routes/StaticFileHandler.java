@@ -1,4 +1,9 @@
-package Server;
+package Server.Routes;
+
+import Server.HTTP.HttpRequest;
+import Server.HTTP.HttpResponse;
+import Server.StatusCode;
+import Server.UserFileSystem;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
