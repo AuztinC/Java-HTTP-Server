@@ -3,10 +3,10 @@ package Server.Routes;
 import Server.HTTP.HttpRequest;
 import Server.HTTP.HttpResponse;
 import Server.StatusCode;
+import Server.UserFileSystem;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
@@ -18,12 +18,13 @@ public class DirectoryListingHandler implements RouteHandler {
     }
 
     public HttpResponse handle(HttpRequest req) {
+        UserFileSystem userFileSystem = new UserFileSystem();
         String uri = req.getPath().replaceFirst("/listing", "");
 
         Path targetDir = Path.of(root, uri).normalize();
 
-        if (Files.isDirectory(targetDir)) {
-            try (Stream<Path> paths = Files.list(targetDir)) {
+        if (userFileSystem.isDirectory(targetDir)) {
+            try (Stream<Path> paths = userFileSystem.list(targetDir)) {
                 ByteArrayOutputStream body = new ByteArrayOutputStream();
                 body.write("<html><body><ul>".getBytes());
 
@@ -32,7 +33,7 @@ public class DirectoryListingHandler implements RouteHandler {
                         String name = path.getFileName().toString();
 
                         String href = uri + "/" + name;
-                        if (Files.isDirectory(path))
+                        if (userFileSystem.isDirectory(path))
                             href = "/listing" + href;
 
 

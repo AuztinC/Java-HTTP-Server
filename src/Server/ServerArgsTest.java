@@ -89,10 +89,11 @@ public class ServerArgsTest {
     }
 
 
-//    @Test
-//    public void updatedServerConfigWithFlags() throws IOException {
-//        new ServerArgs(new String[]{"x", "-p", "8080", "-r", "home"});
-//        assertEquals("Running on port: 8080\n" +
-//                "Serving files from: " + new File("/home").getCanonicalPath(), outputStream.toString().trim());
-//    }
+    @Test
+    public void updatedServerConfigWithFlags() throws IOException {
+        new ServerArgs(new String[]{"-x", "-p", "8080", "-r", "home"});
+        assertEquals("Example Server\n" +
+                "Running on port: 8080\n" +
+                "Serving files from: " + System.getProperty("user.dir") + "/home", outputStream.toString().trim());
+    }
 }

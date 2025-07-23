@@ -62,23 +62,5 @@ public class StaticFileHandler {
         return new HttpResponse(StatusCode.OK, mimeType, body);
     }
 
-//    interface FileSystem {
-//        File readBytes();
-//        String mimeType();
-//
-//    }
-//
-//    class DummyFileSystem implements FileSystem {
-//
-//        @Override
-//        public File readBytes() {
-//            return null;
-//        }
-//
-//        @Override
-//        public String mimeType() {
-//            return "";
-//        }
-//    }
 }
 
