@@ -3,17 +3,22 @@ package Server;
 
 import Server.HTTP.HttpRequest;
 import Server.HTTP.HttpResponse;
+import Server.Routes.RouteHandler;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Handler;
 
 public class Server {
     private final ServerSocket serverSocket;
     private final int port;
     private final String root;
     private boolean running;
+    private Map<String, RouteHandler> routes = new HashMap<>();
 
     public Server(ServerArgs args) throws IOException {
         this.port = args.port;
@@ -59,7 +64,7 @@ public class Server {
                 InputStream in = client.getInputStream();
                 OutputStream out = client.getOutputStream();) {
 
-            ClientHandler handler = new ClientHandler(this.root);
+            ClientHandler handler = new ClientHandler(this.root, routes);
             HttpRequest req = HttpRequest.parse(in);
             HttpResponse resp = handler.handle(req);
             out.write(resp.getBytes());
@@ -73,5 +78,14 @@ public class Server {
         running = false;
         serverSocket.close();
     }
+
+    public void addRoute(String path, RouteHandler handler) {
+        routes.put(path, handler);
+    }
+
+    public Map<String, RouteHandler> getRoutes() {
+        return routes;
+    }
+
 }
 

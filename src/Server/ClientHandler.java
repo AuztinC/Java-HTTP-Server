@@ -15,18 +15,11 @@ public class ClientHandler {
 
     private final StaticFileHandler staticFileHandler;
 
-    public ClientHandler(String root) {
+    public ClientHandler(String root, Map<String, RouteHandler> routes) {
         this.root = root;
-        routes = new HashMap<>();
+        this.routes = routes;
 
         staticFileHandler = new StaticFileHandler();
-
-        routes.put("/hello", new HelloHandler());
-        routes.put("/guess", new GuessHandler());
-        routes.put("/form\\?*.*", new FormHandler());
-        routes.put("/ping", new PingHandler(new ThreadSleep()));
-        routes.put("/ping/[0-9]+", new PingHandler(new ThreadSleep()));
-        routes.put("/listing.*", new DirectoryListingHandler(root));
     }
 
     public HttpResponse handle(HttpRequest req) {

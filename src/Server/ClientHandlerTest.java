@@ -3,6 +3,7 @@ package Server;
 import Server.GuessGame.GuessTarget;
 import Server.HTTP.HttpRequest;
 import Server.HTTP.HttpResponse;
+import Server.Routes.RouteHandler;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -14,12 +15,13 @@ import java.util.Map;
 import static org.junit.Assert.*;
 
 public class ClientHandlerTest {
-
+    Map<String, RouteHandler> routes;
     ClientHandler handler;
 
     @Test
     public void handlesHello() {
-        handler = new ClientHandler(System.getProperty("user.dir"));
+
+        handler = new ClientHandler(System.getProperty("user.dir"), routes);
         HttpRequest req = new HttpRequest(Methods.GET, "/hello", "1.1", null, null);
         HttpResponse resp = handler.handle(req);
         assertEquals("200 OK", resp.getStatus());
@@ -32,7 +34,7 @@ public class ClientHandlerTest {
 
     @Test
     public void handlesNotFound() {
-        handler = new ClientHandler(System.getProperty("user.dir"));
+        handler = new ClientHandler(System.getProperty("user.dir"), routes);
         HttpRequest req = new HttpRequest(Methods.GET, "/blah", "1.1", null, null);
         HttpResponse resp = handler.handle(req);
         assertEquals("404 Not Found", resp.getStatus());
@@ -40,7 +42,7 @@ public class ClientHandlerTest {
 
     @Test
     public void servesProjectFile() {
-        handler = new ClientHandler(System.getProperty("user.dir"));
+        handler = new ClientHandler(System.getProperty("user.dir"), routes);
         HttpRequest req = new HttpRequest(Methods.GET, "/src/Main.java");
         HttpResponse resp = handler.handle(req);
         assertEquals("200 OK", resp.getStatus());
@@ -50,7 +52,7 @@ public class ClientHandlerTest {
 
     @Test
     public void listingsDisplaysFilesInDirectory() {
-        handler = new ClientHandler(System.getProperty("user.dir") + "/src/testroot");
+        handler = new ClientHandler(System.getProperty("user.dir") + "/src/testroot", routes);
         HttpRequest req = new HttpRequest(Methods.GET, "/listing");
         HttpResponse resp = handler.handle(req);
         String responseText = new String(resp.getBytes(), StandardCharsets.UTF_8);
@@ -64,7 +66,7 @@ public class ClientHandlerTest {
 
     @Test
     public void listingImgDisplaysListOfImgFiles() {
-        handler = new ClientHandler(System.getProperty("user.dir") + "/src/testroot") ;
+        handler = new ClientHandler(System.getProperty("user.dir") + "/src/testroot", routes) ;
         HttpRequest req = new HttpRequest(Methods.GET, "/listing/img");
         HttpResponse resp = handler.handle(req);
         String responseText = new String(resp.getBytes(), StandardCharsets.UTF_8);
@@ -77,7 +79,7 @@ public class ClientHandlerTest {
 
     @Test
     public void servesIndexHtmlIfPresentInDirectory() {
-        handler = new ClientHandler(System.getProperty("user.dir") + "/src/html");
+        handler = new ClientHandler(System.getProperty("user.dir") + "/src/html", routes);
         HttpRequest req = new HttpRequest(Methods.GET, "/");
         HttpResponse resp = handler.handle(req);
         assertEquals("200 OK", resp.getStatus());
@@ -87,7 +89,7 @@ public class ClientHandlerTest {
 
     @Test
     public void listsDirectoryContentsIfNoIndexHtml() {
-        handler = new ClientHandler(System.getProperty("user.dir") + "/src/testroot");
+        handler = new ClientHandler(System.getProperty("user.dir") + "/src/testroot", routes);
         HttpRequest req = new HttpRequest(Methods.GET, "/img");
         HttpResponse resp = handler.handle(req);
 
@@ -101,7 +103,7 @@ public class ClientHandlerTest {
 
     @Test
     public void formHandlesQueryParams() {
-        handler = new ClientHandler(System.getProperty("user.dir"));
+        handler = new ClientHandler(System.getProperty("user.dir"), routes);
         HttpRequest req = new HttpRequest(Methods.GET, "/form?foo=1&bar=2");
         HttpResponse resp = handler.handle(req);
 
@@ -125,7 +127,7 @@ public class ClientHandlerTest {
                         "FAKEIMAGECONTENT" + "\r\n" +
                         "------" + boundary + "--\r\n";
 
-        handler = new ClientHandler(System.getProperty("user.dir"));
+        handler = new ClientHandler(System.getProperty("user.dir"), routes);
         Map<String, String> headers = new HashMap<>();
         headers.put("content-length", "" + body.getBytes(StandardCharsets.UTF_8).length);
         headers.put("content-type", "multipart/form-data; charset=utf-8; boundary=" + boundary);
@@ -142,7 +144,7 @@ public class ClientHandlerTest {
 
     @Test
     public void guessGameLandingPageWithCookie() {
-        handler = new ClientHandler(System.getProperty("user.dir"));
+        handler = new ClientHandler(System.getProperty("user.dir"), routes);
 
         Map<String, String> headers = new HashMap<>();
         headers.put("cookie", "userId=test-user");
@@ -161,7 +163,7 @@ public class ClientHandlerTest {
     public void guessPOSTReturnPage() {
         String body = "number=10";
 
-        handler = new ClientHandler(System.getProperty("user.dir"));
+        handler = new ClientHandler(System.getProperty("user.dir"), routes);
         Map<String, String> headers = new HashMap<>();
         headers.put("content-length", "" + body.getBytes(StandardCharsets.UTF_8).length);
         headers.put("content-type", "text/plain");
@@ -175,7 +177,7 @@ public class ClientHandlerTest {
 
     @Test
     public void guessPOSTTooLow() {
-        handler = new ClientHandler(System.getProperty("user.dir"));
+        handler = new ClientHandler(System.getProperty("user.dir"), routes);
         String userId = "test-user";
 
         GuessTarget guessState = GuessTarget.getInstance();
@@ -197,7 +199,7 @@ public class ClientHandlerTest {
 
     @Test
     public void guessPOSTTooHigh() {
-        handler = new ClientHandler(System.getProperty("user.dir"));
+        handler = new ClientHandler(System.getProperty("user.dir"), routes);
         String userId = "test-user";
 
         GuessTarget guessState = GuessTarget.getInstance();
@@ -219,7 +221,7 @@ public class ClientHandlerTest {
 
     @Test
     public void guessPOSTCorrectAnswer() {
-        handler = new ClientHandler(System.getProperty("user.dir"));
+        handler = new ClientHandler(System.getProperty("user.dir"), routes);
         String userId = "test-user";
 
         GuessTarget guessState = GuessTarget.getInstance();
@@ -241,7 +243,7 @@ public class ClientHandlerTest {
 
     @Test
     public void guessPOSTOutOfGuesses() {
-        handler = new ClientHandler(System.getProperty("user.dir"));
+        handler = new ClientHandler(System.getProperty("user.dir"), routes);
         String userId = "test-user";
 
         GuessTarget guessState = GuessTarget.getInstance();
@@ -263,7 +265,7 @@ public class ClientHandlerTest {
 
     @Test
     public void pingIsInstant() {
-        handler = new ClientHandler(System.getProperty("user.dir"));
+        handler = new ClientHandler(System.getProperty("user.dir"), routes);
         HttpRequest req = new HttpRequest(Methods.GET, "/ping");
         HttpResponse resp = handler.handle(req);
         DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
