@@ -1,9 +1,10 @@
 package Server;
 
+import Server.GuessGame.GuessHandler;
 import Server.GuessGame.GuessTarget;
 import Server.HTTP.HttpRequest;
 import Server.HTTP.HttpResponse;
-import Server.Routes.RouteHandler;
+import Server.Routes.*;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -15,12 +16,12 @@ import java.util.Map;
 import static org.junit.Assert.*;
 
 public class ClientHandlerTest {
-    Map<String, RouteHandler> routes;
+    Map<String, RouteHandler> routes = new HashMap<>();
     ClientHandler handler;
 
     @Test
     public void handlesHello() {
-
+        routes.put("/hello", new HelloHandler());
         handler = new ClientHandler(System.getProperty("user.dir"), routes);
         HttpRequest req = new HttpRequest(Methods.GET, "/hello", "1.1", null, null);
         HttpResponse resp = handler.handle(req);
@@ -52,6 +53,7 @@ public class ClientHandlerTest {
 
     @Test
     public void listingsDisplaysFilesInDirectory() {
+        routes.put("/listing", new DirectoryListingHandler(System.getProperty("user.dir") + "/src/testroot"));
         handler = new ClientHandler(System.getProperty("user.dir") + "/src/testroot", routes);
         HttpRequest req = new HttpRequest(Methods.GET, "/listing");
         HttpResponse resp = handler.handle(req);
@@ -66,6 +68,8 @@ public class ClientHandlerTest {
 
     @Test
     public void listingImgDisplaysListOfImgFiles() {
+        routes.put("/listing/img", new DirectoryListingHandler(System.getProperty("user.dir") + "/src/testroot"));
+
         handler = new ClientHandler(System.getProperty("user.dir") + "/src/testroot", routes) ;
         HttpRequest req = new HttpRequest(Methods.GET, "/listing/img");
         HttpResponse resp = handler.handle(req);
@@ -103,6 +107,7 @@ public class ClientHandlerTest {
 
     @Test
     public void formHandlesQueryParams() {
+        routes.put("/form\\?*.*", new FormHandler());
         handler = new ClientHandler(System.getProperty("user.dir"), routes);
         HttpRequest req = new HttpRequest(Methods.GET, "/form?foo=1&bar=2");
         HttpResponse resp = handler.handle(req);
@@ -118,6 +123,7 @@ public class ClientHandlerTest {
 
     @Test
     public void formPostMultiPartUpload() {
+        routes.put("/form\\?*.*", new FormHandler());
         String boundary = "----MyBoundary";
         String body =
                 "------" + boundary + "\r\n" +
@@ -144,6 +150,7 @@ public class ClientHandlerTest {
 
     @Test
     public void guessGameLandingPageWithCookie() {
+        routes.put("/guess", new GuessHandler());
         handler = new ClientHandler(System.getProperty("user.dir"), routes);
 
         Map<String, String> headers = new HashMap<>();
@@ -161,6 +168,7 @@ public class ClientHandlerTest {
 
     @Test
     public void guessPOSTReturnPage() {
+        routes.put("/guess", new GuessHandler());
         String body = "number=10";
 
         handler = new ClientHandler(System.getProperty("user.dir"), routes);
@@ -177,6 +185,8 @@ public class ClientHandlerTest {
 
     @Test
     public void guessPOSTTooLow() {
+        routes.put("/guess", new GuessHandler());
+
         handler = new ClientHandler(System.getProperty("user.dir"), routes);
         String userId = "test-user";
 
@@ -199,6 +209,8 @@ public class ClientHandlerTest {
 
     @Test
     public void guessPOSTTooHigh() {
+        routes.put("/guess", new GuessHandler());
+
         handler = new ClientHandler(System.getProperty("user.dir"), routes);
         String userId = "test-user";
 
@@ -221,6 +233,8 @@ public class ClientHandlerTest {
 
     @Test
     public void guessPOSTCorrectAnswer() {
+        routes.put("/guess", new GuessHandler());
+
         handler = new ClientHandler(System.getProperty("user.dir"), routes);
         String userId = "test-user";
 
@@ -243,6 +257,8 @@ public class ClientHandlerTest {
 
     @Test
     public void guessPOSTOutOfGuesses() {
+        routes.put("/guess", new GuessHandler());
+
         handler = new ClientHandler(System.getProperty("user.dir"), routes);
         String userId = "test-user";
 
@@ -265,6 +281,7 @@ public class ClientHandlerTest {
 
     @Test
     public void pingIsInstant() {
+        routes.put("/ping", new PingHandler(new ThreadSleep()));
         handler = new ClientHandler(System.getProperty("user.dir"), routes);
         HttpRequest req = new HttpRequest(Methods.GET, "/ping");
         HttpResponse resp = handler.handle(req);
